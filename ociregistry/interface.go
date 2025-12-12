@@ -99,6 +99,7 @@ type Reader interface {
 	// starting at offset0, up to but not including offset1.
 	// If offset1 is negative or exceeds the actual size of the blob, GetBlobRange will
 	// return all the data starting from offset0.
+	// If offset0 is negative, offset1 is the number of bytes to return from the end of the blob. (TODO https://github.com/cue-labs/oci/issues/47)
 	// The context also controls the lifetime of the returned BlobReader.
 	GetBlobRange(ctx context.Context, repo string, digest Digest, offset0, offset1 int64) (BlobReader, error)
 

@@ -138,7 +138,7 @@ func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.Respo
 	defer w.Close()
 
 	if _, err := io.Copy(w, req.Body); err != nil {
-		return fmt.Errorf("failed to copy data to %T: %v", w, err)
+		return fmt.Errorf("failed to copy data to %T: %w", w, err)
 	}
 	desc, err := w.Commit(ociregistry.Digest(rreq.Digest))
 	if err != nil {
@@ -154,7 +154,7 @@ func (r *registry) handleBlobCompleteUpload(ctx context.Context, resp http.Respo
 func (r *registry) handleBlobMount(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
 	desc, err := r.backend.MountBlob(ctx, rreq.FromRepo, rreq.Repo, ociregistry.Digest(rreq.Digest))
 	if err != nil {
-		return err
+		return r.handleBlobStartUpload(ctx, resp, req, rreq) // TODO debug log?  only do this on 404?
 	}
 	if err := r.setLocationHeader(resp, true, desc, "/v2/"+rreq.Repo+"/blobs/"+rreq.Digest); err != nil {
 		return err

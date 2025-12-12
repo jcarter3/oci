@@ -43,8 +43,12 @@ func (r *Registry) GetBlobRange(ctx context.Context, repoName string, dig ocireg
 	if o1 < 0 || o1 > int64(len(b.data)) {
 		o1 = int64(len(b.data))
 	}
+	if o0 < 0 { // TODO https://github.com/cue-labs/oci/issues/47
+		o0 = max(int64(len(b.data))-o1, 0)
+		o1 = int64(len(b.data))
+	}
 	if o0 < 0 || o0 > o1 {
-		return nil, fmt.Errorf("invalid range [%d, %d]; have [%d, %d]", o0, o1, 0, len(b.data))
+		return nil, fmt.Errorf("%w: [%d, %d]; have [%d, %d]", ociregistry.ErrRangeInvalid, o0, o1, 0, len(b.data))
 	}
 	return NewBytesReader(b.data[o0:o1], b.descriptor()), nil
 }

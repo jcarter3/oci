@@ -93,6 +93,10 @@ func (r *registry) handleBlobGet(ctx context.Context, resp http.ResponseWriter, 
 		if rng.end == -1 || rng.end > desc.Size {
 			rng.end = desc.Size
 		}
+		if rng.start == -1 { // TODO https://github.com/cue-labs/oci/issues/47
+			rng.start = desc.Size - rng.end
+			rng.end = desc.Size
+		}
 		if rng.start > desc.Size {
 			return withHTTPCode(http.StatusRequestedRangeNotSatisfiable, fmt.Errorf("range starts after end of blob"))
 		}

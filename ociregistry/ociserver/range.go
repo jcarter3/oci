@@ -29,6 +29,7 @@ import (
 
 // httpRange specifies a byte range as requested by a client.
 // If end is negative, it represents the end of the file.
+// If start is negative, end represents the number of bytes to return from the end of the file. (TODO https://github.com/cue-labs/oci/issues/47)
 type httpRange struct {
 	start, end int64
 }
@@ -63,7 +64,13 @@ func parseRange(s string) ([]httpRange, error) {
 			if end == "" || end[0] == '-' {
 				return nil, errors.New("invalid range")
 			}
-			return nil, errors.New("end-relative range not supported")
+			// TODO https://github.com/cue-labs/oci/issues/47
+			r.start = -1
+			i, err := strconv.ParseInt(end, 10, 64)
+			if err != nil {
+				return nil, errors.New("invalid range")
+			}
+			r.end = i
 		} else {
 			i, err := strconv.ParseInt(start, 10, 64)
 			if err != nil || i < 0 {

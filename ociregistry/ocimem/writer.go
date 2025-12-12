@@ -33,7 +33,7 @@ func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregist
 		return ociregistry.Descriptor{}, fmt.Errorf("cannot read content: %v", err)
 	}
 	if err := CheckDescriptor(desc, data); err != nil {
-		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
+		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %w", err)
 	}
 
 	r.mu.Lock()
@@ -42,7 +42,7 @@ func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregist
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
-	repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, data: data}
+	repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, digest: desc.Digest, data: data}
 	return desc, nil
 }
 
@@ -69,7 +69,7 @@ func (r *Registry) PushBlobChunkedResume(ctx context.Context, repoName, id strin
 			r.mu.Lock()
 			defer r.mu.Unlock()
 			desc, data, _ := b.GetBlob()
-			repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, data: data}
+			repo.blobs[desc.Digest] = &blob{mediaType: desc.MediaType, digest: desc.Digest, data: data}
 			return nil
 		}, id)
 		repo.uploads[b.ID()] = b
@@ -129,7 +129,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	// make a copy of the data to avoid potential corruption.
 	data = slices.Clone(data)
 	if err := CheckDescriptor(desc, data); err != nil {
-		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
+		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %w", err)
 	}
 	info, err := r.checkManifestReferences(repoName, desc.MediaType, data)
 	if err != nil {
@@ -138,6 +138,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 
 	repo.manifests[dig] = &blob{
 		mediaType: mediaType,
+		digest:    dig,
 		data:      data,
 		info:      info,
 	}
@@ -166,7 +167,7 @@ func (r *Registry) checkManifestReferences(repoName string, mediaType string, da
 		}
 		switch info.kind {
 		case kindBlob:
-			if repo.blobs[info.desc.Digest] == nil {
+			if repo.blobs[info.desc.Digest] == nil && len(info.desc.URLs) == 0 { // TODO should the "urls" half of this check be optional?
 				return manifestInfo{}, fmt.Errorf("blob for %s not found", info.name)
 			}
 		case kindManifest:
