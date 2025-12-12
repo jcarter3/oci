@@ -158,16 +158,12 @@ func CheckDescriptor(desc ociregistry.Descriptor, data []byte) error {
 	if err := desc.Digest.Validate(); err != nil {
 		return fmt.Errorf("invalid digest: %v", err)
 	}
-	if data != nil {
-		if digest.FromBytes(data) != desc.Digest {
-			return fmt.Errorf("digest mismatch")
-		}
+	if data != nil || desc.Size == 0 {
 		if desc.Size != int64(len(data)) {
-			return fmt.Errorf("size mismatch")
+			return ociregistry.ErrSizeInvalid // TODO include both sizes in the error?
 		}
-	} else {
-		if desc.Size == 0 && desc.Digest != emptyHash {
-			return fmt.Errorf("zero sized content with mismatching digest")
+		if desc.Digest.Algorithm().FromBytes(data) != desc.Digest {
+			return ociregistry.ErrDigestInvalid // TODO include both digests in the error?
 		}
 	}
 	if desc.MediaType == "" {

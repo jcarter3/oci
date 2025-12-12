@@ -33,7 +33,7 @@ func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregist
 		return ociregistry.Descriptor{}, fmt.Errorf("cannot read content: %v", err)
 	}
 	if err := CheckDescriptor(desc, data); err != nil {
-		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
+		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %w", err)
 	}
 
 	r.mu.Lock()
@@ -129,7 +129,7 @@ func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string
 	// make a copy of the data to avoid potential corruption.
 	data = slices.Clone(data)
 	if err := CheckDescriptor(desc, data); err != nil {
-		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %v", err)
+		return ociregistry.Descriptor{}, fmt.Errorf("invalid descriptor: %w", err)
 	}
 	info, err := r.checkManifestReferences(repoName, desc.MediaType, data)
 	if err != nil {
@@ -166,7 +166,7 @@ func (r *Registry) checkManifestReferences(repoName string, mediaType string, da
 		}
 		switch info.kind {
 		case kindBlob:
-			if repo.blobs[info.desc.Digest] == nil {
+			if repo.blobs[info.desc.Digest] == nil && len(info.desc.URLs) == 0 { // TODO should the "urls" half of this check be optional?
 				return manifestInfo{}, fmt.Errorf("blob for %s not found", info.name)
 			}
 		case kindManifest:

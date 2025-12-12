@@ -335,7 +335,10 @@ func Parse(method string, u *url.URL) (*Request, error) {
 		case ociref.IsValidTag(last):
 			rreq.Tag = last
 		default:
-			return nil, errNotFound
+			if strings.Contains(last, ":") {
+				return nil, errBadlyFormedDigest
+			}
+			return nil, errNotFound // TODO this probably shouldn't be 404 (more like 500 or just always errBadlyFormedDigest or maybe even "badly formed tag")
 		}
 		switch method {
 		case "GET":

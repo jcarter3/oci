@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/opencontainers/go-digest"
-
 	"cuelabs.dev/go/oci/ociregistry"
 )
 
@@ -178,8 +176,8 @@ func (b *Buffer) checkCommit(dig ociregistry.Digest) (err error) {
 			b.commitErr = err
 		}
 	}()
-	if digest.FromBytes(b.buf) != dig {
-		return fmt.Errorf("digest mismatch (sha256(%q) != %s): %w", b.buf, dig, ociregistry.ErrDigestInvalid)
+	if err := CheckDescriptor(ociregistry.Descriptor{Digest: dig, Size: int64(len(b.buf)), MediaType: "application/octet-stream"}, b.buf); err != nil { // TODO is it sane to abuse CheckDescriptor as "validate digest algorithm + validate digest" like this? it feels good to have that logic centralized
+		return err
 	}
 	b.desc = ociregistry.Descriptor{
 		MediaType: "application/octet-stream",

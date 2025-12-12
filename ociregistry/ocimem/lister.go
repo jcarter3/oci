@@ -42,7 +42,9 @@ func (r *Registry) Referrers(ctx context.Context, repoName string, digest ocireg
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
-	if err != nil {
+	if err == ociregistry.ErrNameUnknown {
+		return ociregistry.SliceSeq([]ociregistry.Descriptor{}) // "Assuming a repository is found, this request MUST return a 200 OK response code. If the registry supports the referrers API, the registry MUST NOT return a 404 Not Found to a referrers API requests."
+	} else if err != nil {
 		return ociregistry.ErrorSeq[ociregistry.Descriptor](err)
 	}
 	var referrers []ociregistry.Descriptor
