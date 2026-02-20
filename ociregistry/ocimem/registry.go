@@ -27,6 +27,7 @@ import (
 
 var _ ociregistry.Interface = (*Registry)(nil)
 
+// Registry is an in-memory implementation of [ociregistry.Interface].
 type Registry struct {
 	*ociregistry.Funcs
 	cfg   Config

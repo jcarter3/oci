@@ -19,12 +19,14 @@ const (
 )
 
 const (
-	// Known resource types.
+	// TypeRepository is the resource type for repository-scoped operations.
 	TypeRepository = "repository"
-	TypeRegistry   = "registry"
+	// TypeRegistry is the resource type for registry-wide operations.
+	TypeRegistry = "registry"
 
-	// Known action types.
+	// ActionPull is the action for pulling content from a repository.
 	ActionPull = "pull"
+	// ActionPush is the action for pushing content to a repository.
 	ActionPush = "push"
 )
 
@@ -67,6 +69,7 @@ type ResourceScope struct {
 	Action string
 }
 
+// Equal reports whether rs1 and rs2 represent the same resource scope.
 func (rs1 ResourceScope) Equal(rs2 ResourceScope) bool {
 	return rs1.Compare(rs2) == 0
 }
@@ -350,6 +353,7 @@ func (s1 Scope) Union(s2 Scope) Scope {
 	return r
 }
 
+// Holds reports whether the scope s includes the given resource scope r.
 func (s Scope) Holds(r ResourceScope) bool {
 	if s.IsUnlimited() {
 		return true
@@ -426,6 +430,7 @@ outer2:
 	return true
 }
 
+// Equal reports whether s1 and s2 represent the same set of scopes.
 func (s1 Scope) Equal(s2 Scope) bool {
 	return s1.IsUnlimited() == s2.IsUnlimited() &&
 		slices.Equal(s1.repositories, s2.repositories) &&

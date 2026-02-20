@@ -23,6 +23,8 @@ import "iter"
 //go:fix inline
 type Seq[T any] = iter.Seq2[T, error]
 
+// All collects all items from an iterator into a slice.
+// It returns the collected items and the first error encountered, if any.
 func All[T any](it iter.Seq2[T, error]) ([]T, error) {
 	xs := []T{}
 	for x, err := range it {
@@ -34,6 +36,7 @@ func All[T any](it iter.Seq2[T, error]) ([]T, error) {
 	return xs, nil
 }
 
+// SliceSeq returns an iterator over the elements of xs that never returns an error.
 func SliceSeq[T any](xs []T) iter.Seq2[T, error] {
 	return func(yield func(T, error) bool) {
 		for _, x := range xs {

@@ -130,6 +130,7 @@ type Reference struct {
 	Digest Digest
 }
 
+// Digest is a content-addressable digest. It is an alias for [digest.Digest].
 type Digest = digest.Digest
 
 // IsValidHost reports whether s is a valid host (or host:port) part of a reference string.
@@ -137,7 +138,7 @@ func IsValidHost(s string) bool {
 	return hostPat().MatchString(s)
 }
 
-// IsValidHost reports whether s is a valid repository part
+// IsValidRepository reports whether s is a valid repository part
 // of a reference string.
 func IsValidRepository(s string) bool {
 	return repoPat().MatchString(s)
