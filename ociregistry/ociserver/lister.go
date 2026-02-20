@@ -76,7 +76,7 @@ func (r *registry) handleCatalogList(ctx context.Context, resp http.ResponseWrit
 	}
 	resp.Header().Set("Content-Length", strconv.Itoa(len(msg)))
 	resp.WriteHeader(http.StatusOK)
-	io.Copy(resp, bytes.NewReader([]byte(msg)))
+	io.Copy(resp, bytes.NewReader(msg))
 	return nil
 }
 
