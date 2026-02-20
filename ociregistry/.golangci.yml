@@ -1,0 +1,199 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - revive
+    - gosec
+    - unconvert
+    - unparam
+    - misspell
+    - errname
+    - bodyclose
+    - noctx
+    - testifylint
+    - dupword
+    - durationcheck
+    - fatcontext
+    - intrange
+    - copyloopvar
+    - exptostd
+    - whitespace
+    - predeclared
+    - nilerr
+    - nosprintfhostport
+    - usestdlibvars
+    - usetesting
+  disable:
+    - errorlint
+    - gocritic
+    - perfsprint
+    - exhaustruct
+    - wsl
+    - nlreturn
+    - varnamelen
+    - ireturn
+    - mnd
+    - funlen
+    - cyclop
+    - gocognit
+    - gocyclo
+    - nestif
+    - godox
+    - lll
+    - wrapcheck
+    - err113
+    - nonamedreturns
+    - paralleltest
+    - tparallel
+    - testpackage
+    - depguard
+    - tagliatelle
+    - containedctx
+    - gochecknoglobals
+    - gochecknoinits
+    - exhaustive
+    - forbidigo
+    - forcetypeassert
+    - inamedparam
+    - interfacebloat
+    - godot
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow
+
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+          disabled: true
+        - name: increment-decrement
+        - name: var-naming
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: range
+        - name: receiver-naming
+          disabled: true
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+          disabled: true
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unreachable-code
+
+    gosec:
+      excludes:
+        - G101 # hard-coded credentials (too many false positives)
+        - G104 # unhandled errors (too noisy for resp.Body.Close patterns)
+        - G115 # integer overflow from type conversion
+        - G117 # secret field patterns (false positives on auth structs)
+        - G204 # subprocess with variable arguments
+        - G704 # SSRF (false positives for HTTP clients)
+        - G705 # XSS (false positives for HTTP clients)
+        - G706 # log injection (false positives for server logging)
+
+    misspell:
+      locale: US
+
+    testifylint:
+      enable-all: true
+
+  exclusions:
+    generated: strict
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+    rules:
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+          - unparam
+          - bodyclose
+          - noctx
+          - usestdlibvars
+          - dupword
+      - path: internal/
+        linters:
+          - revive
+          - errcheck
+      # Inherited code: pre-existing misspellings in comments and upstream test data.
+      - linters:
+          - misspell
+        source: "cancelled|behaviour|amortise|cancelling|identifer|excercise|manfiest"
+      # Inherited code: pre-existing duplicate words from upstream.
+      - linters:
+          - dupword
+        path: (ociauth/auth\.go|ociref/reference\.go)
+      # Inherited code: resp.Body.Close and io.Copy in HTTP handlers.
+      - linters:
+          - errcheck
+        source: "(resp\\.Write|io\\.Copy|ociregistry\\.WriteError)"
+      # Inherited code: string HTTP method constants.
+      - linters:
+          - usestdlibvars
+        path: (ociclient/|ociauth/)
+      # Inherited code: bodyclose false positives in forked client code.
+      - linters:
+          - bodyclose
+        path: (ociclient/|error\.go)
+      # Inherited code: noctx in authfile helper.
+      - linters:
+          - noctx
+        path: ociauth/authfile\.go
+      # Inherited code: errname on WireErrors type.
+      - linters:
+          - errname
+        path: error\.go
+      # Inherited code: unused field in client.
+      - linters:
+          - unused
+        path: ociclient/client\.go
+        text: "listPageSize"
+      # Inherited code: ineffectual assignment in lister.
+      - linters:
+          - ineffassign
+        path: ociserver/lister\.go
+      # Inherited code: staticcheck empty branch.
+      - linters:
+          - staticcheck
+        text: "SA9003"
+      # Inherited code: testifylint suggestions on existing tests.
+      - linters:
+          - testifylint
+        path: (error_test\.go|iter_test\.go|ociclient/error_test\.go|ocifilter/select_test\.go|ociauth/auth_test\.go)
+      # Inherited code: whitespace in existing tests.
+      - linters:
+          - whitespace
+        path: (ociclient/auth_test\.go|ociserver/registry_test\.go)
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+run:
+  timeout: 5m
+  tests: true

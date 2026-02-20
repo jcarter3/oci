@@ -113,12 +113,11 @@ func TestBearerAuthAdditionalScope(t *testing.T) {
 			}
 		}
 		requestedScope := ParseScope(strings.Join(req.Form["scope"], " "))
-		if !runNonFatal(t, func(t testing.TB) {
+		runNonFatal(t, func(t testing.TB) {
 			wantScope := requiredScope.Union(additionalScope)
 			require.True(t, wantScope.Equal(requestedScope), "scope mismatch: got %v, want %v", requestedScope, wantScope)
 			require.Equal(t, []string{"someService"}, req.Form["service"])
-		}) {
-		}
+		})
 		return &wireToken{
 			Token: token{requestedScope}.String(),
 		}, nil

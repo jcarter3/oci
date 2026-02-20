@@ -1,0 +1,47 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  GOLANGCI_LINT_VERSION: v2.10.1
+  GO_VERSION: "1.25.0"
+  LINT_IMAGE: "golangci/golangci-lint:{{.GOLANGCI_LINT_VERSION}}"
+
+tasks:
+  test:
+    desc: Run all tests
+    dir: .
+    cmds:
+      - go test ./...
+
+  lint:
+    desc: Run golangci-lint inside a Docker container
+    dir: .
+    cmds:
+      - >-
+        docker run --rm
+        -v {{.ROOT_DIR}}:/workspace
+        -w /workspace
+        -e GOFLAGS=-buildvcs=false
+        -e GOLANGCI_LINT_CACHE=/tmp/.golangci-lint-cache
+        {{.LINT_IMAGE}}
+        golangci-lint run ./...
+
+  lint:fix:
+    desc: Run golangci-lint with auto-fix inside a Docker container
+    dir: .
+    cmds:
+      - >-
+        docker run --rm
+        -v {{.ROOT_DIR}}:/workspace
+        -w /workspace
+        -e GOFLAGS=-buildvcs=false
+        -e GOLANGCI_LINT_CACHE=/tmp/.golangci-lint-cache
+        {{.LINT_IMAGE}}
+        golangci-lint run --fix ./...
+
+  check:
+    desc: Run all checks (lint + test)
+    cmds:
+      - task: lint
+      - task: test
