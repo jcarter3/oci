@@ -50,7 +50,13 @@ func (c *client) Repositories(ctx context.Context, startAfter string) iter.Seq2[
 	})
 }
 
-func (c *client) Tags(ctx context.Context, repoName, startAfter string, limit int) iter.Seq2[string, error] {
+func (c *client) Tags(ctx context.Context, repoName string, params *ociregistry.TagsParameters) iter.Seq2[string, error] {
+	var startAfter string
+	var limit int
+	if params != nil {
+		startAfter = params.StartAfter
+		limit = params.Limit
+	}
 	if limit < 0 {
 		limit = 0
 	}
@@ -75,7 +81,11 @@ func (c *client) Tags(ctx context.Context, repoName, startAfter string, limit in
 	})
 }
 
-func (c *client) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {
+func (c *client) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, params *ociregistry.ReferrersParameters) iter.Seq2[ociregistry.Descriptor, error] {
+	var artifactType string
+	if params != nil {
+		artifactType = params.ArtifactType
+	}
 	return pager(ctx, c, &ocirequest.Request{
 		Kind:         ocirequest.ReqReferrersList,
 		Repo:         repoName,

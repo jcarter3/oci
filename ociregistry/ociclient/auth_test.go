@@ -91,10 +91,10 @@ func TestAuthScopes(t *testing.T) {
 		ociregistry.All(r.Repositories(ctx, ""))
 	})
 	assertScope("repository:foo/bar:pull", func(ctx context.Context, r ociregistry.Interface) {
-		ociregistry.All(r.Tags(ctx, "foo/bar", "", 0))
+		ociregistry.All(r.Tags(ctx, "foo/bar", nil))
 	})
 	assertScope("repository:foo/bar:pull", func(ctx context.Context, r ociregistry.Interface) {
-		ociregistry.All(r.Referrers(ctx, "foo/bar", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", ""))
+		ociregistry.All(r.Referrers(ctx, "foo/bar", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", nil))
 	})
 }
 

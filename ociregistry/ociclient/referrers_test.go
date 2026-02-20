@@ -64,7 +64,7 @@ func TestReferrersFallback(t *testing.T) {
 
 	// Then ask for the referrers.
 	var got []ociregistry.Descriptor
-	for desc, err := range client.Referrers(ctx, repo, subject.Digest, "") {
+	for desc, err := range client.Referrers(ctx, repo, subject.Digest, nil) {
 		require.NoError(t, err)
 		got = append(got, desc)
 	}
@@ -72,7 +72,7 @@ func TestReferrersFallback(t *testing.T) {
 
 	// Check that artifact type filtering still works OK.
 	got = nil
-	for desc, err := range client.Referrers(ctx, repo, subject.Digest, "referrer/2") {
+	for desc, err := range client.Referrers(ctx, repo, subject.Digest, &ociregistry.ReferrersParameters{ArtifactType: "referrer/2"}) {
 		require.NoError(t, err)
 		got = append(got, desc)
 	}

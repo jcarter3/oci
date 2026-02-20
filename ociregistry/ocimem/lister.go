@@ -29,22 +29,32 @@ func (r *Registry) Repositories(_ context.Context, startAfter string) iter.Seq2[
 	return mapKeysIter(r.repos, strings.Compare, startAfter)
 }
 
-func (r *Registry) Tags(_ context.Context, repoName string, startAfter string, limit int) iter.Seq2[string, error] {
+func (r *Registry) Tags(_ context.Context, repoName string, params *ociregistry.TagsParameters) iter.Seq2[string, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
 	if err != nil {
 		return ociregistry.ErrorSeq[string](err)
 	}
+	var startAfter string
+	var limit int
+	if params != nil {
+		startAfter = params.StartAfter
+		limit = params.Limit
+	}
 	return ociregistry.LimitIter(mapKeysIter(repo.tags, strings.Compare, startAfter), limit)
 }
 
-func (r *Registry) Referrers(_ context.Context, repoName string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {
+func (r *Registry) Referrers(_ context.Context, repoName string, digest ociregistry.Digest, params *ociregistry.ReferrersParameters) iter.Seq2[ociregistry.Descriptor, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
 	if err != nil {
 		return ociregistry.ErrorSeq[ociregistry.Descriptor](err)
+	}
+	var artifactType string
+	if params != nil {
+		artifactType = params.ArtifactType
 	}
 	var referrers []ociregistry.Descriptor
 	for _, b := range repo.manifests {

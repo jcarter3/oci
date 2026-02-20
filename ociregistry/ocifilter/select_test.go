@@ -193,14 +193,14 @@ func TestAccessCheckerAccessRequest(t *testing.T) {
 	assertAccess([]accessCheck{
 		{"foo/read", AccessList},
 	}, func(ctx context.Context, r ociregistry.Interface) error {
-		_, err := ociregistry.All(r.Tags(ctx, "foo/read", "", 0))
+		_, err := ociregistry.All(r.Tags(ctx, "foo/read", nil))
 		return err
 	})
 
 	assertAccess([]accessCheck{
 		{"foo/read", AccessList},
 	}, func(ctx context.Context, r ociregistry.Interface) error {
-		_, err := ociregistry.All(r.Referrers(ctx, "foo/read", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", ""))
+		_, err := ociregistry.All(r.Referrers(ctx, "foo/read", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", nil))
 		return err
 	})
 }
