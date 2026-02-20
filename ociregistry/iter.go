@@ -51,3 +51,27 @@ func ErrorSeq[T any](err error) iter.Seq2[T, error] {
 		yield(*new(T), err)
 	}
 }
+
+// LimitIter wraps an iterator so that at most limit items are yielded.
+// If limit is less than or equal to zero, all items are yielded.
+func LimitIter[T any](it iter.Seq2[T, error], limit int) iter.Seq2[T, error] {
+	if limit <= 0 {
+		return it
+	}
+	return func(yield func(T, error) bool) {
+		n := 0
+		for item, err := range it {
+			if err != nil {
+				yield(item, err)
+				return
+			}
+			if !yield(item, nil) {
+				return
+			}
+			n++
+			if n >= limit {
+				return
+			}
+		}
+	}
+}

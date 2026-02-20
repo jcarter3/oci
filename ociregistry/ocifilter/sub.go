@@ -156,9 +156,9 @@ func (r *subRegistry) Repositories(ctx context.Context, startAfter string) iter.
 	}
 }
 
-func (r *subRegistry) Tags(ctx context.Context, repo, startAfter string) iter.Seq2[string, error] {
+func (r *subRegistry) Tags(ctx context.Context, repo, startAfter string, limit int) iter.Seq2[string, error] {
 	ctx = r.mapScopes(ctx)
-	return r.r.Tags(ctx, r.repo(repo), startAfter)
+	return r.r.Tags(ctx, r.repo(repo), startAfter, limit)
 }
 
 func (r *subRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {

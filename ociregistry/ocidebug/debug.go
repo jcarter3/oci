@@ -163,11 +163,11 @@ func (r *logger) Repositories(ctx context.Context, startAfter string) iter.Seq2[
 	)
 }
 
-func (r *logger) Tags(ctx context.Context, repoName string, startAfter string) iter.Seq2[string, error] {
+func (r *logger) Tags(ctx context.Context, repoName string, startAfter string, limit int) iter.Seq2[string, error] {
 	return logIterReturn(
 		r,
-		fmt.Sprintf("Tags %s startAfter: %q", repoName, startAfter),
-		r.r.Tags(ctx, repoName, startAfter),
+		fmt.Sprintf("Tags %s startAfter: %q limit: %d", repoName, startAfter, limit),
+		r.r.Tags(ctx, repoName, startAfter, limit),
 	)
 }
 

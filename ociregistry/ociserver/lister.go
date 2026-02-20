@@ -43,7 +43,7 @@ type listTags struct {
 }
 
 func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	tags, link, err := r.nextListResults(req, rreq, r.backend.Tags(ctx, rreq.Repo, rreq.ListLast))
+	tags, link, err := r.nextListResults(req, rreq, r.backend.Tags(ctx, rreq.Repo, rreq.ListLast, rreq.ListN))
 	if err != nil {
 		return err
 	}

@@ -34,7 +34,6 @@ import (
 func (c *client) Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error] {
 	return pager(ctx, c, &ocirequest.Request{
 		Kind:     ocirequest.ReqCatalogList,
-		ListN:    c.listPageSize,
 		ListLast: startAfter,
 	}, true, func(resp *http.Response) ([]string, error) {
 		data, err := io.ReadAll(resp.Body)
@@ -51,11 +50,14 @@ func (c *client) Repositories(ctx context.Context, startAfter string) iter.Seq2[
 	})
 }
 
-func (c *client) Tags(ctx context.Context, repoName, startAfter string) iter.Seq2[string, error] {
+func (c *client) Tags(ctx context.Context, repoName, startAfter string, limit int) iter.Seq2[string, error] {
+	if limit < 0 {
+		limit = 0
+	}
 	return pager(ctx, c, &ocirequest.Request{
 		Kind:     ocirequest.ReqTagsList,
 		Repo:     repoName,
-		ListN:    c.listPageSize,
+		ListN:    limit,
 		ListLast: startAfter,
 	}, true, func(resp *http.Response) ([]string, error) {
 		data, err := io.ReadAll(resp.Body)
@@ -78,7 +80,7 @@ func (c *client) Referrers(ctx context.Context, repoName string, digest ociregis
 		Kind:         ocirequest.ReqReferrersList,
 		Repo:         repoName,
 		Digest:       string(digest),
-		ListN:        c.listPageSize,
+		ListN:        0,
 		ArtifactType: artifactType,
 	}, false, func(resp *http.Response) ([]ociregistry.Descriptor, error) {
 		body := resp.Body
@@ -153,7 +155,7 @@ func pager[T any](ctx context.Context, c *client, initialReq *ocirequest.Request
 					return
 				}
 			}
-			if len(items) < initialReq.ListN {
+			if len(items) == 0 || (initialReq.ListN > 0 && len(items) < initialReq.ListN) {
 				// From the distribution spec:
 				//     The response to such a request MAY return fewer than <int> results,
 				//     but only when the total number of tags attached to the repository

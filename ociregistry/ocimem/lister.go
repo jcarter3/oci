@@ -29,14 +29,14 @@ func (r *Registry) Repositories(_ context.Context, startAfter string) iter.Seq2[
 	return mapKeysIter(r.repos, strings.Compare, startAfter)
 }
 
-func (r *Registry) Tags(_ context.Context, repoName string, startAfter string) iter.Seq2[string, error] {
+func (r *Registry) Tags(_ context.Context, repoName string, startAfter string, limit int) iter.Seq2[string, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	repo, err := r.repo(repoName)
 	if err != nil {
 		return ociregistry.ErrorSeq[string](err)
 	}
-	return mapKeysIter(repo.tags, strings.Compare, startAfter)
+	return ociregistry.LimitIter(mapKeysIter(repo.tags, strings.Compare, startAfter), limit)
 }
 
 func (r *Registry) Referrers(_ context.Context, repoName string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {

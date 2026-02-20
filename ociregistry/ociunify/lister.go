@@ -31,11 +31,15 @@ func (u unifier) Repositories(ctx context.Context, startAfter string) iter.Seq2[
 	return mergeIter(r0, r1, strings.Compare)
 }
 
-func (u unifier) Tags(ctx context.Context, repo, startAfter string) iter.Seq2[string, error] {
+func (u unifier) Tags(ctx context.Context, repo, startAfter string, limit int) iter.Seq2[string, error] {
 	r0, r1 := both(u, func(r ociregistry.Interface, _ int) iter.Seq2[string, error] {
-		return r.Tags(ctx, repo, startAfter)
+		return r.Tags(ctx, repo, startAfter, limit)
 	})
-	return mergeIter(r0, r1, strings.Compare)
+	it := mergeIter(r0, r1, strings.Compare)
+	if limit > 0 {
+		return ociregistry.LimitIter(it, limit)
+	}
+	return it
 }
 
 func (u unifier) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {

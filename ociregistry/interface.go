@@ -73,6 +73,7 @@ type Interface interface {
 	Reader
 	Deleter
 	Lister
+	Extension
 	private()
 }
 
@@ -211,17 +212,14 @@ type Deleter interface {
 // Lister defines registry operations that enumerate objects within the registry.
 // TODO support resumption from a given point.
 type Lister interface {
-	// Repositories returns an iterator that can be used to iterate
-	// over all the repositories in the registry in lexical order.
-	// If startAfter is non-empty, the iteration starts lexically
-	// after, but not including, that repository.
-	Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error]
-
 	// Tags returns an iterator that can be used to iterate over all
 	// the tags in the given repository in lexical order. If
 	// startAfter is non-empty, the tags start lexically after, but
 	// not including that tag.
-	Tags(ctx context.Context, repo string, startAfter string) iter.Seq2[string, error]
+	//
+	// If limit is greater than zero, at most that many tags will be returned.
+	// If limit is less than or equal to zero, all tags will be returned.
+	Tags(ctx context.Context, repo string, startAfter string, limit int) iter.Seq2[string, error]
 
 	// Referrers returns an iterator that can be used to iterate over all
 	// the manifests that have the given digest as their Subject.
@@ -229,6 +227,15 @@ type Lister interface {
 	// only manifests with that type.
 	// TODO is it possible to ask for multiple artifact types?
 	Referrers(ctx context.Context, repo string, digest Digest, artifactType string) iter.Seq2[Descriptor, error]
+}
+
+// Extension defines registry operations that are not currently part of the spec, but are additional optional operations
+type Extension interface {
+	// Repositories returns an iterator that can be used to iterate
+	// over all the repositories in the registry in lexical order.
+	// If startAfter is non-empty, the iteration starts lexically
+	// after, but not including, that repository.
+	Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error]
 }
 
 // BlobWriter provides a handle for uploading a blob to a registry.
