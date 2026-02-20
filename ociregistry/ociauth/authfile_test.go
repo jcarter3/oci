@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-quicktest/qt"
 	"github.com/rogpeppe/go-internal/testscript"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
@@ -21,25 +21,32 @@ func TestMain(m *testing.M) {
 	})
 }
 
+// patch temporarily replaces the value at ptr with val, restoring it via t.Cleanup.
+func patch[T any](t *testing.T, ptr *T, val T) {
+	old := *ptr
+	*ptr = val
+	t.Cleanup(func() { *ptr = old })
+}
+
 func TestLoadWithNoConfig(t *testing.T) {
-	qt.Patch(t, &userHomeDir, func(getenv func(string) string) string {
+	patch(t, &userHomeDir, func(getenv func(string) string) string {
 		return getenv("HOME")
 	})
 	t.Setenv("HOME", "")
 	t.Setenv("DOCKER_CONFIG", "")
 	t.Setenv("XDG_RUNTIME_DIR", "")
 	c, err := Load(noRunner)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("some.org")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{}, info)
 }
 
 func TestLoad(t *testing.T) {
 	// Write config files in all the places, so we can check
 	// that the precedence works OK.
 	d := t.TempDir()
-	qt.Patch(t, &userHomeDir, func(getenv func(string) string) string {
+	patch(t, &userHomeDir, func(getenv func(string) string) string {
 		return getenv("HOME")
 	})
 	locations := []struct {
@@ -86,47 +93,47 @@ func TestLoad(t *testing.T) {
 			t.Setenv(loc.env, epath)
 			cfgPath := filepath.Join(epath, filepath.FromSlash(loc.file))
 			err := os.MkdirAll(filepath.Dir(cfgPath), 0o777)
-			qt.Assert(t, qt.IsNil(err))
+			require.NoError(t, err)
 
 			// Write the config file with a username that
 			// reflects where it's stored.
 			err = os.WriteFile(cfgPath, c, 0o666)
-			qt.Assert(t, qt.IsNil(err))
+			require.NoError(t, err)
 		}
 	}
 	for _, loc := range locations {
 		t.Run(loc.env, func(t *testing.T) {
 			c, err := Load(noRunner)
-			qt.Assert(t, qt.IsNil(err))
+			require.NoError(t, err)
 			info, err := c.EntryForRegistry("someregistry.example.com")
-			qt.Assert(t, qt.IsNil(err))
-			qt.Assert(t, qt.Equals(info, ConfigEntry{
+			require.NoError(t, err)
+			require.Equal(t, ConfigEntry{
 				Username: loc.env,
 				Password: "somepassword",
-			}))
+			}, info)
 
 			if loc.isInline {
 				// Remove the DOCKER_AUTH_CONFIG so that the next
 				// level of precedence can be checked.
 				err := os.Unsetenv(loc.env)
-				qt.Assert(t, qt.IsNil(err))
+				require.NoError(t, err)
 			} else {
 				// Remove the directory containing the above
 				// config file so that the next level of precedence
 				// can be checked.
 				err = os.RemoveAll(filepath.Join(d, loc.dir))
-				qt.Assert(t, qt.IsNil(err))
+				require.NoError(t, err)
 			}
 		})
 	}
 	// When there's no config file available, it should return
 	// an empty configuration and no error.
 	c, err := Load(noRunner)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 
 	info, err := c.EntryForRegistry("someregistry.example.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{}, info)
 }
 
 func TestWithBase64Auth(t *testing.T) {
@@ -138,13 +145,13 @@ func TestWithBase64Auth(t *testing.T) {
 		}
 	}
 }`)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("someregistry.example.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "testuser",
 		Password: "password",
-	}))
+	}, info)
 }
 
 func TestWithMalformedBase64Auth(t *testing.T) {
@@ -156,7 +163,8 @@ func TestWithMalformedBase64Auth(t *testing.T) {
 		}
 	}
 }`)
-	qt.Assert(t, qt.ErrorMatches(err, `invalid config file ".*": cannot decode auth field for "someregistry.example.com": invalid base64-encoded string`))
+	require.Error(t, err)
+	require.Regexp(t, `invalid config file ".*": cannot decode auth field for "someregistry.example.com": invalid base64-encoded string`, err.Error())
 }
 
 func TestWithAuthAndUsername(t *testing.T) {
@@ -171,13 +179,13 @@ func TestWithAuthAndUsername(t *testing.T) {
 		}
 	}
 }`)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("someregistry.example.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "testuser",
 		Password: "password",
-	}))
+	}, info)
 }
 
 func TestWithURLEntry(t *testing.T) {
@@ -190,13 +198,13 @@ func TestWithURLEntry(t *testing.T) {
 		}
 	}
 }`)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("someregistry.example.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "foo",
 		Password: "bar",
-	}))
+	}, info)
 }
 
 func TestWithURLEntryAndExplicitHost(t *testing.T) {
@@ -213,19 +221,19 @@ func TestWithURLEntryAndExplicitHost(t *testing.T) {
 		}
 	}
 }`)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("someregistry.example.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "baz",
 		Password: "arble",
-	}))
+	}, info)
 	info, err = c.EntryForRegistry("https://someregistry.example.com/v1")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "foo",
 		Password: "bar",
-	}))
+	}, info)
 }
 
 func TestWithMultipleURLsAndSameHost(t *testing.T) {
@@ -246,9 +254,10 @@ func TestWithMultipleURLsAndSameHost(t *testing.T) {
 		}
 	}
 }`)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	_, err = c.EntryForRegistry("someregistry.example.com")
-	qt.Assert(t, qt.ErrorMatches(err, `more than one auths entry for "someregistry.example.com" \(http://someregistry.example.com/v1, http://someregistry.example.com/v2, https://someregistry.example.com/v1\)`))
+	require.Error(t, err)
+	require.Regexp(t, `more than one auths entry for "someregistry.example.com" \(http://someregistry.example.com/v1, http://someregistry.example.com/v2, https://someregistry.example.com/v1\)`, err.Error())
 }
 
 func TestWithHelperBasic(t *testing.T) {
@@ -260,13 +269,13 @@ func TestWithHelperBasic(t *testing.T) {
 	}
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("registry-with-basic-auth.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "someuser",
 		Password: "somesecret",
-	}))
+	}, info)
 }
 
 func TestWithHelperToken(t *testing.T) {
@@ -278,12 +287,12 @@ func TestWithHelperToken(t *testing.T) {
 	}
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("registry-with-token.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		RefreshToken: "sometoken",
-	}))
+	}, info)
 }
 
 func TestWithHelperRegistryNotFound(t *testing.T) {
@@ -295,10 +304,10 @@ func TestWithHelperRegistryNotFound(t *testing.T) {
 	}
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("other.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{}))
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{}, info)
 }
 
 func TestWithHelperRegistryOtherError(t *testing.T) {
@@ -310,9 +319,10 @@ func TestWithHelperRegistryOtherError(t *testing.T) {
 	}
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	_, err = c.EntryForRegistry("registry-with-error.com")
-	qt.Assert(t, qt.ErrorMatches(err, `error getting credentials: some error`))
+	require.Error(t, err)
+	require.Regexp(t, `error getting credentials: some error`, err.Error())
 }
 
 func TestWithDefaultHelper(t *testing.T) {
@@ -322,13 +332,13 @@ func TestWithDefaultHelper(t *testing.T) {
 	"credsStore": "test"
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("registry-with-basic-auth.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "someuser",
 		Password: "somesecret",
-	}))
+	}, info)
 }
 
 func TestWithDefaultHelperNotFound(t *testing.T) {
@@ -347,13 +357,13 @@ func TestWithDefaultHelperNotFound(t *testing.T) {
 	}
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("registry-with-basic-auth.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "u1",
 		Password: "p",
-	}))
+	}, info)
 }
 
 func TestWithDefaultHelperOtherError(t *testing.T) {
@@ -373,9 +383,10 @@ func TestWithDefaultHelperOtherError(t *testing.T) {
 	}
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	_, err = c.EntryForRegistry("registry-with-basic-auth.com")
-	qt.Assert(t, qt.ErrorMatches(err, `some error`))
+	require.Error(t, err)
+	require.Regexp(t, `some error`, err.Error())
 }
 
 func TestWithSpecificHelperNotFound(t *testing.T) {
@@ -388,9 +399,10 @@ func TestWithSpecificHelperNotFound(t *testing.T) {
 	}
 }
 `)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	_, err = c.EntryForRegistry("registry-with-basic-auth.com")
-	qt.Assert(t, qt.ErrorMatches(err, `helper not found: exec: "docker-credential-definitely-not-found-executable": executable file not found .*`))
+	require.Error(t, err)
+	require.Regexp(t, `helper not found: exec: "docker-credential-definitely-not-found-executable": executable file not found .*`, err.Error())
 }
 
 func TestWithHelperAndExplicitEnv(t *testing.T) {
@@ -403,25 +415,25 @@ func TestWithHelperAndExplicitEnv(t *testing.T) {
 	}
 }
 `), 0o666)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	c, err := LoadWithEnv(nil, []string{
 		"DOCKER_CONFIG=" + d,
 		"TEST_SECRET=foo",
 	})
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	info, err := c.EntryForRegistry("registry-with-env-lookup.com")
-	qt.Assert(t, qt.IsNil(err))
-	qt.Assert(t, qt.Equals(info, ConfigEntry{
+	require.NoError(t, err)
+	require.Equal(t, ConfigEntry{
 		Username: "someuser",
 		Password: "foo",
-	}))
+	}, info)
 }
 
 func load(t *testing.T, runner HelperRunner, cfgData string) (Config, error) {
 	d := t.TempDir()
 	t.Setenv("DOCKER_CONFIG", d)
 	err := os.WriteFile(filepath.Join(d, "config.json"), []byte(cfgData), 0o666)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	return Load(runner)
 }
 

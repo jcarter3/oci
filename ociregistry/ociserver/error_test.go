@@ -16,14 +16,16 @@ package ociserver
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 
-	"github.com/go-quicktest/qt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCustomErrorWriter(t *testing.T) {
@@ -39,9 +41,9 @@ func TestCustomErrorWriter(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 	resp, err := http.Get(s.URL + "/v2/foo/manifests/sometag")
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer resp.Body.Close()
-	qt.Assert(t, qt.Equals(resp.Header.Get("Some-Header"), "a value"))
+	require.Equal(t, "a value", resp.Header.Get("Some-Header"))
 }
 
 func TestHTTPStatusOverriddenByErrorCode(t *testing.T) {
@@ -56,16 +58,19 @@ func TestHTTPStatusOverriddenByErrorCode(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 	resp, err := http.Get(s.URL + "/v2/foo/manifests/sometag")
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
-	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusNotFound))
-	qt.Assert(t, qt.JSONEquals(body, &ociregistry.WireErrors{
+	require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	expected := &ociregistry.WireErrors{
 		Errors: []ociregistry.WireError{{
 			Code_:   ociregistry.ErrNameUnknown.Code(),
 			Message: "401 Unauthorized: name unknown: repository name not known to registry",
 		}},
-	}))
+	}
+	expectedJSON, err := json.Marshal(expected)
+	require.NoError(t, err)
+	assert.JSONEq(t, string(expectedJSON), string(body))
 }
 
 func TestHTTPStatusUsedForUnknownErrorCode(t *testing.T) {
@@ -80,14 +85,17 @@ func TestHTTPStatusUsedForUnknownErrorCode(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 	resp, err := http.Get(s.URL + "/v2/foo/manifests/sometag")
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
-	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusTeapot))
-	qt.Assert(t, qt.JSONEquals(body, &ociregistry.WireErrors{
+	require.Equal(t, http.StatusTeapot, resp.StatusCode)
+	expected := &ociregistry.WireErrors{
 		Errors: []ociregistry.WireError{{
 			Code_:   "SOMECODE",
 			Message: "foo",
 		}},
-	}))
+	}
+	expectedJSON, err := json.Marshal(expected)
+	require.NoError(t, err)
+	assert.JSONEq(t, string(expectedJSON), string(body))
 }

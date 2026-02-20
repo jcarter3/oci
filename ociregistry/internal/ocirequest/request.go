@@ -23,8 +23,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociref"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociref"
 )
 
 var (

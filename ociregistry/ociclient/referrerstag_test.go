@@ -3,8 +3,8 @@ package ociclient
 import (
 	"testing"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"github.com/go-quicktest/qt"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/stretchr/testify/require"
 )
 
 var referrersTagTests = []struct {
@@ -27,7 +27,7 @@ var referrersTagTests = []struct {
 func TestReferrersTag(t *testing.T) {
 	for _, test := range referrersTagTests {
 		t.Run(string(test.digest), func(t *testing.T) {
-			qt.Assert(t, qt.Equals(referrersTag(test.digest), test.want))
+			require.Equal(t, test.want, referrersTag(test.digest))
 		})
 	}
 }

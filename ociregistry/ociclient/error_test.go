@@ -9,10 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociserver"
-	"github.com/go-quicktest/qt"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociserver"
 	"github.com/opencontainers/go-digest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestErrorStuttering(t *testing.T) {
@@ -29,18 +30,18 @@ func TestErrorStuttering(t *testing.T) {
 	r, err := New(srvURL.Host, &Options{
 		Insecure: true,
 	})
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	_, err = r.GetTag(context.Background(), "foo", "sometag")
-	qt.Check(t, qt.ErrorIs(err, ociregistry.ErrManifestUnknown))
-	qt.Check(t, qt.ErrorMatches(err, `404 Not Found: manifest unknown: manifest unknown to registry`))
+	assert.ErrorIs(t, err, ociregistry.ErrManifestUnknown)
+	assert.Regexp(t, `404 Not Found: manifest unknown: manifest unknown to registry`, err.Error())
 
 	// ResolveTag uses HEAD rather than GET, so here we're testing
 	// the path where a response with no body gets turned back into
 	// something vaguely resembling the original error, which is why
 	// the code and message have changed.
 	_, err = r.ResolveTag(context.Background(), "foo", "sometag")
-	qt.Check(t, qt.ErrorIs(err, ociregistry.ErrNameUnknown))
-	qt.Check(t, qt.ErrorMatches(err, `404 Not Found: name unknown: repository name not known to registry`))
+	assert.ErrorIs(t, err, ociregistry.ErrNameUnknown)
+	assert.Regexp(t, `404 Not Found: name unknown: repository name not known to registry`, err.Error())
 }
 
 func TestNonJSONErrorResponse(t *testing.T) {
@@ -54,13 +55,13 @@ func TestNonJSONErrorResponse(t *testing.T) {
 	r, err := New(srvURL.Host, &Options{
 		Insecure: true,
 	})
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	assertStatusCode := func(f func(ctx context.Context, r ociregistry.Interface) error) {
 		err := f(context.Background(), r)
 		var herr ociregistry.HTTPError
 		ok := errors.As(err, &herr)
-		qt.Assert(t, qt.IsTrue(ok))
-		qt.Assert(t, qt.Equals(herr.StatusCode(), http.StatusTeapot))
+		require.True(t, ok)
+		require.Equal(t, http.StatusTeapot, herr.StatusCode())
 	}
 	assertStatusCode(func(ctx context.Context, r ociregistry.Interface) error {
 		rd, err := r.GetBlob(ctx, "foo/read", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")

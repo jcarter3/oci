@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"io"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 func (u unifier) PushBlob(ctx context.Context, repo string, desc ociregistry.Descriptor, r io.Reader) (ociregistry.Descriptor, error) {

@@ -19,7 +19,7 @@ import (
 	"io"
 	"iter"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 // AccessKind

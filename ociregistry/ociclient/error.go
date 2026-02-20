@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"strings"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 // errorBodySizeLimit holds the maximum number of response bytes aallowed in

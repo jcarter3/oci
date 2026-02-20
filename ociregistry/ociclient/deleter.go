@@ -18,8 +18,8 @@ import (
 	"context"
 	"net/http"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/internal/ocirequest"
 )
 
 func (c *client) DeleteBlob(ctx context.Context, repoName string, digest ociregistry.Digest) error {

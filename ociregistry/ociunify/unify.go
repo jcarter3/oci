@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 type Options struct {

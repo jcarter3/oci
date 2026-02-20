@@ -26,8 +26,8 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/internal/ocirequest"
 	ocispecroot "github.com/opencontainers/image-spec/specs-go"
 )
 

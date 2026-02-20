@@ -22,14 +22,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociclient"
-	"cuelabs.dev/go/oci/ociregistry/ocimem"
-	"cuelabs.dev/go/oci/ociregistry/ociserver"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociclient"
+	"github.com/jcarter3/oci/ociregistry/ocimem"
+	"github.com/jcarter3/oci/ociregistry/ociserver"
 )
 
 // Test that implementing an OCI registry proxy by sitting ociserver
@@ -138,7 +139,7 @@ func testClient(tb testing.TB, server *httptest.Server) ociregistry.Interface {
 	client, err := ociclient.New(server.Listener.Addr().String(), &ociclient.Options{
 		Insecure: true, // since it's a local httptest server
 	})
-	qt.Assert(tb, qt.IsNil(err))
+	require.NoError(tb, err)
 	return client
 }
 
@@ -159,10 +160,10 @@ func TestProxyRequests(t *testing.T) {
 
 			// Run the input client action, and compare the results.
 			err := test.clientDo(context.TODO(), inputClient)
-			qt.Assert(t, qt.IsNil(err))
+			require.NoError(t, err)
 
-			qt.Check(t, qt.DeepEquals(proxyReqs, test.proxyRequests))
-			qt.Check(t, qt.DeepEquals(backendReqs, test.backendRequests))
+			assert.Equal(t, test.proxyRequests, proxyReqs)
+			assert.Equal(t, test.backendRequests, backendReqs)
 		})
 	}
 }

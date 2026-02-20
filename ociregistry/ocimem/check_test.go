@@ -6,11 +6,11 @@ import (
 	"errors"
 	"testing"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ocitest"
-	"github.com/go-quicktest/qt"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ocitest"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/stretchr/testify/require"
 )
 
 var pushManifestTests = []struct {
@@ -271,9 +271,10 @@ func TestPushManifest(t *testing.T) {
 			data := test.manifestData(content)
 			_, err := r.R.PushManifest(ctx, "test", test.tag, data, test.mediaType)
 			if test.wantError != "" {
-				qt.Assert(t, qt.ErrorMatches(err, test.wantError))
+				require.Error(t, err)
+				require.Regexp(t, test.wantError, err.Error())
 			} else {
-				qt.Assert(t, qt.IsNil(err))
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -378,15 +379,16 @@ func TestDeleteBlob(t *testing.T) {
 			digest := test.getDigest(content)
 			err := r.R.DeleteBlob(ctx, "test", digest)
 			if test.wantError != "" {
-				qt.Assert(t, qt.ErrorMatches(err, test.wantError))
+				require.Error(t, err)
+				require.Regexp(t, test.wantError, err.Error())
 			} else {
-				qt.Assert(t, qt.IsNil(err))
+				require.NoError(t, err)
 			}
 			// Regardless of the result, the blob shouldn't be there afterwards
 			// unless the operation was denied.
 			if !errors.Is(err, ociregistry.ErrDenied) {
 				_, err := r.R.ResolveBlob(ctx, "test", digest)
-				qt.Assert(t, qt.Not(qt.IsNil(err)))
+				require.Error(t, err)
 			}
 		})
 	}
@@ -488,15 +490,16 @@ func TestDeleteManifest(t *testing.T) {
 			digest := test.getDigest(content)
 			err := r.R.DeleteManifest(ctx, "test", digest)
 			if test.wantError != "" {
-				qt.Assert(t, qt.ErrorMatches(err, test.wantError))
+				require.Error(t, err)
+				require.Regexp(t, test.wantError, err.Error())
 			} else {
-				qt.Assert(t, qt.IsNil(err))
+				require.NoError(t, err)
 			}
 			// Regardless of the result, the manifest shouldn't be there afterwards
 			// unless the operation was denied.
 			if !errors.Is(err, ociregistry.ErrDenied) {
 				_, err := r.R.ResolveManifest(ctx, "test", digest)
-				qt.Assert(t, qt.Not(qt.IsNil(err)))
+				require.Error(t, err)
 			}
 		})
 	}
@@ -585,21 +588,22 @@ func TestDeleteTag(t *testing.T) {
 			})["test"]
 			err := r.R.DeleteTag(ctx, "test", test.tag)
 			if test.wantError != "" {
-				qt.Assert(t, qt.ErrorMatches(err, test.wantError))
+				require.Error(t, err)
+				require.Regexp(t, test.wantError, err.Error())
 			} else {
-				qt.Assert(t, qt.IsNil(err))
+				require.NoError(t, err)
 			}
 			// Regardless of the result, the tag shouldn't be there afterwards
 			// unless the operation was denied.
 			if !errors.Is(err, ociregistry.ErrDenied) {
 				_, err := r.R.ResolveTag(ctx, "test", test.tag)
-				qt.Assert(t, qt.Not(qt.IsNil(err)))
+				require.Error(t, err)
 			}
 			// The manifest should remain present even though the tag
 			// itself has been deleted.
 			if tagDesc, ok := content.Manifests[test.preload.Tags[test.tag]]; ok {
 				_, err := r.R.ResolveManifest(ctx, "test", tagDesc.Digest)
-				qt.Assert(t, qt.IsNil(err))
+				require.NoError(t, err)
 			}
 		})
 	}

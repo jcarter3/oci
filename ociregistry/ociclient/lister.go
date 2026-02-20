@@ -27,8 +27,8 @@ import (
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/internal/ocirequest"
 )
 
 func (c *client) Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error] {

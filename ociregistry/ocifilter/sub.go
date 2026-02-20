@@ -21,8 +21,8 @@ import (
 	"path"
 	"strings"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociauth"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociauth"
 )
 
 // Sub returns r wrapped so that it addresses only

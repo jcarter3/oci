@@ -8,12 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociauth"
-	"cuelabs.dev/go/oci/ociregistry/ocimem"
-	"cuelabs.dev/go/oci/ociregistry/ociserver"
-	"github.com/go-quicktest/qt"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociauth"
+	"github.com/jcarter3/oci/ociregistry/ocimem"
+	"github.com/jcarter3/oci/ociregistry/ociserver"
 	"github.com/opencontainers/go-digest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAuthScopes(t *testing.T) {
@@ -60,16 +61,16 @@ func TestAuthScopes(t *testing.T) {
 	})
 	assertScope("repository:foo/bar:push", func(ctx context.Context, r ociregistry.Interface) {
 		w, err := r.PushBlobChunked(ctx, "foo/bar", 0)
-		qt.Assert(t, qt.IsNil(err))
+		require.NoError(t, err)
 		w.Write([]byte("foo"))
 		w.Close()
 
 		id := w.ID()
 		w, err = r.PushBlobChunkedResume(ctx, "foo/bar", id, 3, 0)
-		qt.Assert(t, qt.IsNil(err))
+		require.NoError(t, err)
 		w.Write([]byte("bar"))
 		_, err = w.Commit(digest.FromString("foobar"))
-		qt.Assert(t, qt.IsNil(err))
+		require.NoError(t, err)
 	})
 	assertScope("repository:x/y:pull repository:z/w:push", func(ctx context.Context, r ociregistry.Interface) {
 		r.MountBlob(ctx, "x/y", "z/w", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
@@ -110,17 +111,17 @@ func assertAuthScope(t *testing.T, host string, scope string, f func(ctx context
 		Insecure: true,
 		Transport: transportFunc(func(req *http.Request) (*http.Response, error) {
 			ctx := req.Context()
-			qt.Check(t, qt.Equals(ctx.Value(foo{}), true))
+			assert.Equal(t, true, ctx.Value(foo{}))
 			scope := ociauth.RequestInfoFromContext(ctx).RequiredScope
 			requestedScopes[scope.Canonical().String()] = true
 			return http.DefaultTransport.RoundTrip(req)
 		}),
 	})
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	f(ctx, client)
-	qt.Assert(t, qt.HasLen(requestedScopes, 1))
+	require.Len(t, requestedScopes, 1)
 	t.Logf("requested scopes: %v", requestedScopes)
-	qt.Assert(t, qt.Equals(mapsKeys(requestedScopes)[0], scope))
+	require.Equal(t, scope, mapsKeys(requestedScopes)[0])
 }
 
 type transportFunc func(req *http.Request) (*http.Response, error)

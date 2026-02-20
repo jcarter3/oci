@@ -1,7 +1,7 @@
 package ociregistry
 
 import (
-	"cuelabs.dev/go/oci/ociregistry/ociref"
+	"github.com/jcarter3/oci/ociregistry/ociref"
 )
 
 // IsValidRepoName reports whether the given repository

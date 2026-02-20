@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"sync"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociref"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociref"
 	"github.com/opencontainers/go-digest"
 )
 

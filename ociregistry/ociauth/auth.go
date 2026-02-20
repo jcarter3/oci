@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 // TODO decide on a good value for this.

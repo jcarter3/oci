@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-quicktest/qt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBadRepoName(t *testing.T) {
@@ -15,13 +16,13 @@ func TestBadRepoName(t *testing.T) {
 		Insecure:  true,
 		Transport: noTransport{},
 	})
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	_, err = r.GetBlob(ctx, "Invalid--Repo", "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-	qt.Check(t, qt.ErrorMatches(err, "invalid OCI request: name invalid: invalid repository name"))
+	assert.Regexp(t, "invalid OCI request: name invalid: invalid repository name", err.Error())
 	_, err = r.GetBlob(ctx, "okrepo", "bad-digest")
-	qt.Check(t, qt.ErrorMatches(err, "invalid OCI request: digest invalid: badly formed digest"))
+	assert.Regexp(t, "invalid OCI request: digest invalid: badly formed digest", err.Error())
 	_, err = r.ResolveTag(ctx, "okrepo", "bad-Tag!")
-	qt.Check(t, qt.ErrorMatches(err, "invalid OCI request: 404 Not Found: page not found"))
+	assert.Regexp(t, "invalid OCI request: 404 Not Found: page not found", err.Error())
 }
 
 type noTransport struct{}

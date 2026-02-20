@@ -22,7 +22,7 @@ import (
 
 	"github.com/opencontainers/go-digest"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 // NewBytesReader returns an implementation of ociregistry.BlobReader

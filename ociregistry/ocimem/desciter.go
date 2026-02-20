@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"iter"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 

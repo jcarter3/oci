@@ -13,9 +13,9 @@
 // limitations under the License.
 
 // Package ocitest provides some helper types for writing ociregistry-related
-// tests. It's designed to be used alongside the [qt package].
+// tests. It's designed to be used alongside [stretchr/testify].
 //
-// [qt package]: https://pkg.go.dev/github.com/go-quicktest/qt
+// [stretchr/testify]: https://pkg.go.dev/github.com/stretchr/testify
 package ocitest
 
 import (
@@ -28,10 +28,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/go-digest"
+	"github.com/stretchr/testify/require"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 type Registry struct {
@@ -157,13 +157,13 @@ func PushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (P
 	return prc, nil
 }
 
-// PushContent pushes all the content in rc to r.
+// MustPushContent pushes all the content in rc to r.
 //
 // It returns a map mapping repository name to the descriptors
 // describing the content that has actually been pushed.
 func (r Registry) MustPushContent(rc RegistryContent) map[string]PushedRepoContent {
 	prc, err := PushContent(r.R, rc)
-	qt.Assert(r.T, qt.IsNil(err))
+	require.NoError(r.T, err)
 	return prc
 }
 
@@ -269,29 +269,29 @@ func (r Registry) MustPushBlob(repo string, data []byte) ociregistry.Descriptor 
 		MediaType: "application/octet-stream",
 	}
 	desc1, err := r.R.PushBlob(context.Background(), repo, desc, bytes.NewReader(data))
-	qt.Assert(r.T, qt.IsNil(err))
+	require.NoError(r.T, err)
 	return desc1
 }
 
 func (r Registry) MustPushManifest(repo string, jsonObject any, tag string) ([]byte, ociregistry.Descriptor) {
 	data, err := json.Marshal(jsonObject)
-	qt.Assert(r.T, qt.IsNil(err))
+	require.NoError(r.T, err)
 	var mt struct {
 		MediaType string `json:"mediaType,omitempty"`
 	}
 	err = json.Unmarshal(data, &mt)
-	qt.Assert(r.T, qt.IsNil(err))
-	qt.Assert(r.T, qt.Not(qt.Equals(mt.MediaType, "")))
+	require.NoError(r.T, err)
+	require.NotEmpty(r.T, mt.MediaType)
 	desc := ociregistry.Descriptor{
 		Digest:    digest.FromBytes(data),
 		Size:      int64(len(data)),
 		MediaType: mt.MediaType,
 	}
 	desc1, err := r.R.PushManifest(context.Background(), repo, tag, data, mt.MediaType)
-	qt.Assert(r.T, qt.IsNil(err))
-	qt.Check(r.T, qt.Equals(desc1.Digest, desc.Digest))
-	qt.Check(r.T, qt.Equals(desc1.Size, desc.Size))
-	qt.Check(r.T, qt.Equals(desc1.MediaType, desc.MediaType))
+	require.NoError(r.T, err)
+	require.Equal(r.T, desc.Digest, desc1.Digest)
+	require.Equal(r.T, desc.Size, desc1.Size)
+	require.Equal(r.T, desc.MediaType, desc1.MediaType)
 	return data, desc1
 }
 
@@ -301,62 +301,21 @@ type Repo struct {
 	R    ociregistry.Interface
 }
 
-// HasContent returns a checker that checks r matches the expected
-// data and has the expected content type. If wantMediaType is
-// empty, application/octet-stream will be expected.
-func HasContent(r ociregistry.BlobReader, wantData []byte, wantMediaType string) qt.Checker {
+// AssertBlobContent checks that r matches the expected data and has the
+// expected content type. If wantMediaType is empty, "application/octet-stream"
+// will be expected.
+func AssertBlobContent(t *testing.T, r ociregistry.BlobReader, wantData []byte, wantMediaType string) {
+	t.Helper()
 	if wantMediaType == "" {
 		wantMediaType = "application/octet-stream"
 	}
-	return contentChecker{
-		r:             r,
-		wantData:      wantData,
-		wantMediaType: wantMediaType,
-	}
-}
-
-type contentChecker struct {
-	r             ociregistry.BlobReader
-	wantData      []byte
-	wantMediaType string
-}
-
-func (c contentChecker) Args() []qt.Arg {
-	return []qt.Arg{{
-		Name:  "reader",
-		Value: c.r,
-	}, {
-		Name:  "data",
-		Value: c.wantData,
-	}, {
-		Name:  "mediaType",
-		Value: c.wantMediaType,
-	}}
-}
-
-func (c contentChecker) Check(note func(key string, value any)) error {
-	desc := c.r.Descriptor()
-	gotData, err := io.ReadAll(c.r)
-	if err != nil {
-		return qt.BadCheckf("error reading data: %v", err)
-	}
-	if got, want := desc.Size, int64(len(c.wantData)); got != want {
-		note("actual data", gotData)
-		return fmt.Errorf("mismatched content length (got %d want %d)", got, want)
-	}
-	if got, want := desc.Digest, digest.FromBytes(c.wantData); got != want {
-		note("actual data", gotData)
-		return fmt.Errorf("mismatched digest (got %v want %v)", got, want)
-	}
-	if !bytes.Equal(gotData, c.wantData) {
-		note("actual data", gotData)
-		return fmt.Errorf("mismatched content")
-	}
-	if got, want := desc.MediaType, c.wantMediaType; got != want {
-		note("actual media type", desc.MediaType)
-		return fmt.Errorf("media type mismatch")
-	}
-	return nil
+	desc := r.Descriptor()
+	gotData, err := io.ReadAll(r)
+	require.NoError(t, err, "error reading data")
+	require.Equal(t, int64(len(wantData)), desc.Size, "mismatched content length")
+	require.Equal(t, digest.FromBytes(wantData), desc.Digest, "mismatched digest")
+	require.Equal(t, wantData, gotData, "mismatched content")
+	require.Equal(t, wantMediaType, desc.MediaType, "media type mismatch")
 }
 
 func ref[T any](x T) *T {

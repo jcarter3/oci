@@ -21,7 +21,7 @@ import (
 	"slices"
 	"strings"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 func (u unifier) Repositories(ctx context.Context, startAfter string) iter.Seq2[string, error] {

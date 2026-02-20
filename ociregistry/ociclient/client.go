@@ -33,10 +33,10 @@ import (
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/internal/ocirequest"
-	"cuelabs.dev/go/oci/ociregistry/ociauth"
-	"cuelabs.dev/go/oci/ociregistry/ociref"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/internal/ocirequest"
+	"github.com/jcarter3/oci/ociregistry/ociauth"
+	"github.com/jcarter3/oci/ociregistry/ociref"
 )
 
 // debug enables logging.

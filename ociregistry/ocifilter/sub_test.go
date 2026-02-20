@@ -22,14 +22,14 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/stretchr/testify/require"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociauth"
-	"cuelabs.dev/go/oci/ociregistry/ocimem"
-	"cuelabs.dev/go/oci/ociregistry/ocitest"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociauth"
+	"github.com/jcarter3/oci/ociregistry/ocimem"
+	"github.com/jcarter3/oci/ociregistry/ocitest"
 )
 
 func TestSub(t *testing.T) {
@@ -92,16 +92,16 @@ func TestSub(t *testing.T) {
 	})
 	r1 := Sub(r.R, "foo")
 	desc, err := r1.ResolveTag(ctx, "bar", "t1")
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 
 	m := getManifest(t, r1, "bar", desc.Digest)
 	b1Content := getBlob(t, r1, "bar", m.Layers[0].Digest)
-	qt.Assert(t, qt.Equals(string(b1Content), "hello"))
+	require.Equal(t, "hello", string(b1Content))
 
 	repos, err := ociregistry.All(r1.Repositories(ctx, ""))
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	slices.Sort(repos)
-	qt.Assert(t, qt.DeepEquals(repos, []string{"bar"}))
+	require.Equal(t, []string{"bar"}, repos)
 }
 
 func TestSubMaintainsAuthScope(t *testing.T) {
@@ -119,9 +119,10 @@ func TestSubMaintainsAuthScope(t *testing.T) {
 	// TODO it would be nice to have a reusable way (in ocitest, probably) of testing general properties
 	// across all ociregistry.Interface methods.
 	_, _ = r.GetBlob(ctx, "some/repo", "sha256:fffff")
-	qt.Assert(t, qt.DeepEquals(gotScope, ociauth.ParseScope(
+	wantScope := ociauth.ParseScope(
 		"other registry:catalog:* repository:foo/bar/a/b:pull,push repository:foo/bar/foo:delete,push",
-	)))
+	)
+	require.True(t, wantScope.Equal(gotScope), "scope mismatch: got %v, want %v", gotScope, wantScope)
 }
 
 type contextChecker struct {
@@ -136,21 +137,21 @@ func (r contextChecker) GetBlob(ctx context.Context, repo string, digest ociregi
 
 func getManifest(t *testing.T, r ociregistry.Interface, repo string, dg digest.Digest) ociregistry.Manifest {
 	rd, err := r.GetManifest(context.Background(), repo, dg)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer rd.Close()
 	var m ociregistry.Manifest
 	data, err := io.ReadAll(rd)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	err = json.Unmarshal(data, &m)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	return m
 }
 
 func getBlob(t *testing.T, r ociregistry.Interface, repo string, dg digest.Digest) []byte {
 	rd, err := r.GetBlob(context.Background(), repo, dg)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer rd.Close()
 	data, err := io.ReadAll(rd)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	return data
 }

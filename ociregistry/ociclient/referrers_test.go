@@ -10,15 +10,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/stretchr/testify/require"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociclient"
-	"cuelabs.dev/go/oci/ociregistry/ocidebug"
-	"cuelabs.dev/go/oci/ociregistry/ocimem"
-	"cuelabs.dev/go/oci/ociregistry/ociserver"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociclient"
+	"github.com/jcarter3/oci/ociregistry/ocidebug"
+	"github.com/jcarter3/oci/ociregistry/ocimem"
+	"github.com/jcarter3/oci/ociregistry/ociserver"
 )
 
 func TestReferrersFallback(t *testing.T) {
@@ -65,18 +65,18 @@ func TestReferrersFallback(t *testing.T) {
 	// Then ask for the referrers.
 	var got []ociregistry.Descriptor
 	for desc, err := range client.Referrers(ctx, repo, subject.Digest, "") {
-		qt.Assert(t, qt.IsNil(err))
+		require.NoError(t, err)
 		got = append(got, desc)
 	}
-	qt.Assert(t, qt.DeepEquals(got, index.Manifests))
+	require.Equal(t, index.Manifests, got)
 
 	// Check that artifact type filtering still works OK.
 	got = nil
 	for desc, err := range client.Referrers(ctx, repo, subject.Digest, "referrer/2") {
-		qt.Assert(t, qt.IsNil(err))
+		require.NoError(t, err)
 		got = append(got, desc)
 	}
-	qt.Assert(t, qt.DeepEquals(got, []ociregistry.Descriptor{index.Manifests[2]}))
+	require.Equal(t, []ociregistry.Descriptor{index.Manifests[2]}, got)
 }
 
 func withMediaType(desc ociregistry.Descriptor, mediaType string) ociregistry.Descriptor {
@@ -91,15 +91,15 @@ func pushScratchConfig(t *testing.T, client ociregistry.Interface, repo string) 
 		Size:   int64(len(content)),
 	}
 	_, err := client.PushBlob(context.Background(), repo, desc, bytes.NewReader(content))
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	return desc
 }
 
 func pushManifest(t *testing.T, client ociregistry.Interface, repo, tag string, content any, mediaType string) ociregistry.Descriptor {
 	data, err := json.Marshal(content)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	desc, err := client.PushManifest(context.Background(), repo, tag, data, mediaType)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	return desc
 }
 

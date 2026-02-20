@@ -22,7 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-quicktest/qt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var parseReferenceTests = []struct {
@@ -359,19 +360,21 @@ func TestParseReference(t *testing.T) {
 				if test.wantErr == "invalid reference syntax" {
 					test.wantErr += regexp.QuoteMeta(fmt.Sprintf(" (%q)", test.input))
 				}
-				qt.Assert(t, qt.ErrorMatches(err, test.wantErr))
+				require.Error(t, err)
+				require.Regexp(t, test.wantErr, err.Error())
 				return
 			}
-			qt.Assert(t, qt.IsNil(err))
-			qt.Check(t, qt.Equals(ref, test.wantRef))
-			qt.Check(t, qt.Equals(ref.String(), test.input))
+			require.NoError(t, err)
+			assert.Equal(t, test.wantRef, ref)
+			assert.Equal(t, test.input, ref.String())
 			if test.wantRef.Host != "" {
 				ref1, err := Parse(test.input)
-				qt.Assert(t, qt.IsNil(err))
-				qt.Check(t, qt.Equals(ref1, test.wantRef))
+				require.NoError(t, err)
+				assert.Equal(t, test.wantRef, ref1)
 			} else {
 				_, err := Parse(test.input)
-				qt.Assert(t, qt.ErrorMatches(err, `reference does not contain host name`))
+				require.Error(t, err)
+				require.Regexp(t, `reference does not contain host name`, err.Error())
 			}
 		})
 	}
@@ -409,7 +412,7 @@ var isValidHostTests = []struct {
 func TestIsValidHost(t *testing.T) {
 	for _, test := range isValidHostTests {
 		t.Run(test.host, func(t *testing.T) {
-			qt.Assert(t, qt.Equals(IsValidHost(test.host), test.want))
+			require.Equal(t, test.want, IsValidHost(test.host))
 		})
 	}
 }
@@ -467,7 +470,7 @@ var isValidRepositoryTests = []struct {
 func TestIsValidRepository(t *testing.T) {
 	for _, test := range isValidRepositoryTests {
 		t.Run(test.repo, func(t *testing.T) {
-			qt.Assert(t, qt.Equals(IsValidRepository(test.repo), test.want))
+			require.Equal(t, test.want, IsValidRepository(test.repo))
 		})
 	}
 }
@@ -522,7 +525,7 @@ var isValidTagTests = []struct {
 func TestIsValidTag(t *testing.T) {
 	for _, test := range isValidTagTests {
 		t.Run(test.tag, func(t *testing.T) {
-			qt.Assert(t, qt.Equals(IsValidTag(test.tag), test.want))
+			require.Equal(t, test.want, IsValidTag(test.tag))
 		})
 	}
 }

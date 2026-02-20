@@ -27,8 +27,8 @@ import (
 	"testing"
 	"time"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociclient"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociclient"
 	"github.com/opencontainers/go-digest"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/retry"

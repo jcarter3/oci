@@ -20,23 +20,24 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-quicktest/qt"
 	"github.com/opencontainers/go-digest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ocimem"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ocimem"
 )
 
 func TestAccessCheckerErrorReturn(t *testing.T) {
 	ctx := context.Background()
 	testErr := errors.New("some error")
 	r1 := AccessChecker(ocimem.New(), func(repoName string, access AccessKind) error {
-		qt.Check(t, qt.Equals(repoName, "foo/bar"))
-		qt.Check(t, qt.Equals(access, AccessRead))
+		assert.Equal(t, "foo/bar", repoName)
+		assert.Equal(t, AccessRead, access)
 		return testErr
 	})
 	_, err := r1.GetTag(ctx, "foo/bar", "t1")
-	qt.Assert(t, qt.ErrorIs(err, testErr))
+	require.ErrorIs(t, err, testErr)
 }
 
 func TestAccessCheckerAccessRequest(t *testing.T) {
@@ -52,8 +53,8 @@ func TestAccessCheckerAccessRequest(t *testing.T) {
 			return nil
 		})
 		err := do(context.Background(), r)
-		qt.Check(t, qt.ErrorIs(err, testErr))
-		qt.Check(t, qt.DeepEquals(gotAccess, wantAccess))
+		assert.ErrorIs(t, err, testErr)
+		assert.Equal(t, wantAccess, gotAccess)
 	}
 	assertAccess([]accessCheck{
 		{"foo/read", AccessRead},

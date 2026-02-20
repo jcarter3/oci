@@ -22,10 +22,10 @@ import (
 	"strings"
 	"testing"
 
-	"cuelabs.dev/go/oci/ociregistry/ocimem"
-	"cuelabs.dev/go/oci/ociregistry/ociserver"
-	"github.com/go-quicktest/qt"
+	"github.com/jcarter3/oci/ociregistry/ocimem"
+	"github.com/jcarter3/oci/ociregistry/ociserver"
 	"github.com/opencontainers/go-digest"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -639,7 +639,7 @@ func TestCalls(t *testing.T) {
 			}
 
 			req, err := http.NewRequest(tc.Method, s.URL+tc.URL, strings.NewReader(tc.Body))
-			qt.Assert(t, qt.IsNil(err))
+			require.NoError(t, err)
 			for k, v := range tc.RequestHeader {
 				req.Header.Set(k, v)
 			}

@@ -3,7 +3,8 @@ package ociauth
 import (
 	"testing"
 
-	"github.com/go-quicktest/qt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var parseScopeTests = []struct {
@@ -144,13 +145,13 @@ func TestParseScope(t *testing.T) {
 		t.Run(test.testName, func(t *testing.T) {
 			scope := ParseScope(test.in)
 			t.Logf("parsed scope: %#v", scope)
-			qt.Check(t, qt.Equals(scope.Canonical().String(), test.canonicalString))
-			qt.Check(t, qt.Equals(scope.String(), test.in))
-			qt.Check(t, qt.DeepEquals(all(scope.Iter()), test.wantScopes))
+			assert.Equal(t, test.canonicalString, scope.Canonical().String())
+			assert.Equal(t, test.in, scope.String())
+			assert.Equal(t, test.wantScopes, all(scope.Iter()))
 			checkStrictOrder(t, scope.Iter(), ResourceScope.Compare)
 			// Check that it does actually preserve identity on round-trip.
 			scope1 := ParseScope(scope.String())
-			qt.Check(t, qt.Equals(scope1.Equal(scope), true))
+			assert.True(t, scope1.Equal(scope))
 		})
 	}
 }
@@ -222,15 +223,15 @@ func TestScopeUnion(t *testing.T) {
 			s1 := parseScopeMaybeUnlimited(test.s1)
 			s2 := parseScopeMaybeUnlimited(test.s2)
 			u1 := s1.Union(s2)
-			qt.Check(t, qt.Equals(u1.String(), test.want))
-			qt.Check(t, qt.Equals(u1.IsUnlimited(), test.wantUnlimited))
+			assert.Equal(t, test.want, u1.String())
+			assert.Equal(t, test.wantUnlimited, u1.IsUnlimited())
 
 			// Check that it's commutative.
 			u2 := s2.Union(s1)
-			qt.Check(t, qt.Equals(u1.String(), test.want))
-			qt.Check(t, qt.Equals(u1.IsUnlimited(), test.wantUnlimited))
+			assert.Equal(t, test.want, u1.String())
+			assert.Equal(t, test.wantUnlimited, u1.IsUnlimited())
 
-			qt.Check(t, qt.IsTrue(u1.Equal(u2)))
+			assert.True(t, u1.Equal(u2))
 		})
 	}
 }
@@ -285,7 +286,7 @@ var scopeHoldsTests = []struct {
 func TestScopeHolds(t *testing.T) {
 	for _, test := range scopeHoldsTests {
 		t.Run(test.testName, func(t *testing.T) {
-			qt.Assert(t, qt.Equals(parseScopeMaybeUnlimited(test.s).Holds(test.holds), test.want))
+			require.Equal(t, test.want, parseScopeMaybeUnlimited(test.s).Holds(test.holds))
 		})
 	}
 }
@@ -352,11 +353,11 @@ func TestScopeContains(t *testing.T) {
 		t.Run(test.testName, func(t *testing.T) {
 			s1 := parseScopeMaybeUnlimited(test.s1)
 			s2 := parseScopeMaybeUnlimited(test.s2)
-			qt.Assert(t, qt.Equals(s1.Contains(s2), test.want))
+			require.Equal(t, test.want, s1.Contains(s2))
 			if s1.Equal(s2) {
-				qt.Assert(t, qt.IsTrue(s2.Contains(s1)))
+				require.True(t, s2.Contains(s1))
 			} else if test.want {
-				qt.Assert(t, qt.IsFalse(s2.Contains(s1)))
+				require.False(t, s2.Contains(s1))
 			}
 		})
 	}
@@ -384,15 +385,15 @@ var scopeLenTests = []struct {
 func TestScopeLen(t *testing.T) {
 	for _, test := range scopeLenTests {
 		t.Run(test.scope.String(), func(t *testing.T) {
-			qt.Assert(t, qt.Equals(test.scope.Len(), test.want), qt.Commentf("%v", test.scope))
+			require.Equal(t, test.want, test.scope.Len(), "%v", test.scope)
 		})
 	}
 }
 
 func TestScopeLenOnUnlimitedScopePanics(t *testing.T) {
-	qt.Assert(t, qt.PanicMatches(func() {
+	require.PanicsWithValue(t, "Len called on unlimited scope", func() {
 		UnlimitedScope().Len()
-	}, "Len called on unlimited scope"))
+	})
 }
 
 func parseScopeMaybeUnlimited(s string) Scope {

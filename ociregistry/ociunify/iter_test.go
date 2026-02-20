@@ -19,8 +19,8 @@ import (
 	"iter"
 	"testing"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"github.com/go-quicktest/qt"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/stretchr/testify/require"
 )
 
 var mergeIterTests = []struct {
@@ -50,8 +50,8 @@ func TestMergeIter(t *testing.T) {
 		t.Run(test.testName, func(t *testing.T) {
 			it := mergeIter(test.it0, test.it1, cmp.Compare)
 			xs, err := ociregistry.All(it)
-			qt.Assert(t, qt.DeepEquals(xs, test.want))
-			qt.Assert(t, qt.Equals(err, test.wantErr))
+			require.Equal(t, test.want, xs)
+			require.Equal(t, test.wantErr, err)
 		})
 	}
 }

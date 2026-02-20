@@ -23,10 +23,10 @@ import (
 	"os"
 	"reflect"
 
-	"cuelabs.dev/go/oci/ociregistry/ociserver"
 	"github.com/cue-exp/cueconfig"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
+	"github.com/jcarter3/oci/ociregistry/ociserver"
 )
 
 var (

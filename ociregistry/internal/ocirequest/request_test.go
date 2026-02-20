@@ -18,7 +18,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/go-quicktest/qt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var parseRequestTests = []struct {
@@ -152,19 +153,20 @@ func TestParseRequest(t *testing.T) {
 			}
 			rreq, err := Parse(test.method, u)
 			if test.wantError != "" {
-				qt.Assert(t, qt.ErrorMatches(err, test.wantError))
+				require.Error(t, err)
+				require.Regexp(t, test.wantError, err.Error())
 				// TODO http code
 				return
 			}
-			qt.Assert(t, qt.IsNil(err))
-			qt.Assert(t, qt.DeepEquals(rreq, test.wantRequest))
+			require.NoError(t, err)
+			require.Equal(t, test.wantRequest, rreq)
 			method, ustr := rreq.MustConstruct()
 			if test.wantConstruct == "" {
 				test.wantConstruct = test.url
 			}
 
-			qt.Check(t, qt.Equals(method, test.method))
-			qt.Check(t, qt.Equals(canonURL(ustr), canonURL(test.wantConstruct)))
+			assert.Equal(t, test.method, method)
+			assert.Equal(t, canonURL(test.wantConstruct), canonURL(ustr))
 		})
 	}
 }

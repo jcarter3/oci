@@ -15,7 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-quicktest/qt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBasicAuth(t *testing.T) {
@@ -58,8 +59,8 @@ func TestBearerAuth(t *testing.T) {
 		}
 		requestedScope := ParseScope(req.Form.Get("scope"))
 		if !runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.DeepEquals(requestedScope, testScope))
-			qt.Assert(t, qt.DeepEquals(req.Form["service"], []string{"someService"}))
+			require.True(t, testScope.Equal(requestedScope), "scope mismatch: got %v, want %v", requestedScope, testScope)
+			require.Equal(t, []string{"someService"}, req.Form["service"])
 		}) {
 			return nil, &httpError{
 				statusCode: http.StatusInternalServerError,
@@ -79,7 +80,7 @@ func TestBearerAuth(t *testing.T) {
 			}
 		}
 		runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.DeepEquals(authScopeFromRequest(t, req), testScope))
+			require.True(t, testScope.Equal(authScopeFromRequest(t, req)), "scope mismatch")
 		})
 		return nil
 	})
@@ -113,8 +114,9 @@ func TestBearerAuthAdditionalScope(t *testing.T) {
 		}
 		requestedScope := ParseScope(strings.Join(req.Form["scope"], " "))
 		if !runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.DeepEquals(requestedScope, requiredScope.Union(additionalScope)))
-			qt.Assert(t, qt.DeepEquals(req.Form["service"], []string{"someService"}))
+			wantScope := requiredScope.Union(additionalScope)
+			require.True(t, wantScope.Equal(requestedScope), "scope mismatch: got %v, want %v", requestedScope, wantScope)
+			require.Equal(t, []string{"someService"}, req.Form["service"])
 		}) {
 		}
 		return &wireToken{
@@ -131,7 +133,8 @@ func TestBearerAuthAdditionalScope(t *testing.T) {
 			}
 		}
 		runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.DeepEquals(authScopeFromRequest(t, req), requiredScope.Union(additionalScope)))
+			wantScope := requiredScope.Union(additionalScope)
+			require.True(t, wantScope.Equal(authScopeFromRequest(t, req)), "scope mismatch")
 		})
 		return nil
 	})
@@ -184,7 +187,7 @@ func TestBearerAuthRequiresExactScope(t *testing.T) {
 				},
 			}
 		}
-		qt.Check(t, qt.Equals(req.Header.Get("Authorization"), "Bearer "+exactScopeAsToken))
+		assert.Equal(t, "Bearer "+exactScopeAsToken, req.Header.Get("Authorization"))
 		return nil
 	})
 	client := &http.Client{
@@ -228,12 +231,12 @@ func TestAuthNotAvailableAfterChallenge(t *testing.T) {
 		}),
 	}
 	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	resp, err := client.Do(req)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer resp.Body.Close()
-	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusUnauthorized))
-	qt.Check(t, qt.Equals(requestCount, 1))
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	assert.Equal(t, 1, requestCount)
 }
 
 func Test401ResponseWithJustAcquiredToken(t *testing.T) {
@@ -259,8 +262,8 @@ func Test401ResponseWithJustAcquiredToken(t *testing.T) {
 	authSrv := newAuthServer(t, func(req *http.Request) (any, *httpError) {
 		requestedScope := ParseScope(req.Form.Get("scope"))
 		if !runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.DeepEquals(requestedScope, testScope))
-			qt.Assert(t, qt.DeepEquals(req.Form["service"], []string{"someService"}))
+			require.True(t, testScope.Equal(requestedScope), "scope mismatch: got %v, want %v", requestedScope, testScope)
+			require.Equal(t, []string{"someService"}, req.Form["service"])
 		}) {
 			return nil, &httpError{
 				statusCode: http.StatusInternalServerError,
@@ -280,7 +283,7 @@ func Test401ResponseWithJustAcquiredToken(t *testing.T) {
 			}
 		}
 		if !runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.DeepEquals(authScopeFromRequest(t, req), testScope))
+			require.True(t, testScope.Equal(authScopeFromRequest(t, req)), "scope mismatch")
 		}) {
 			return &httpError{
 				statusCode: http.StatusInternalServerError,
@@ -301,11 +304,11 @@ func Test401ResponseWithJustAcquiredToken(t *testing.T) {
 		}),
 	}
 	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	resp, err := client.Do(req)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer resp.Body.Close()
-	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusForbidden))
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
 
 func Test401ResponseWithNonAcquiredToken(t *testing.T) {
@@ -345,13 +348,13 @@ func Test401ResponseWithNonAcquiredToken(t *testing.T) {
 		}),
 	}
 	req, err := http.NewRequestWithContext(context.Background(), "GET", ts.String()+"/test", nil)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	resp, err := client.Do(req)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer resp.Body.Close()
 	data, _ := io.ReadAll(resp.Body)
-	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusUnauthorized))
-	qt.Assert(t, qt.Equals(string(data), "password mismatch"))
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	require.Equal(t, "password mismatch", string(data))
 }
 
 func TestConfigHasAccessToken(t *testing.T) {
@@ -363,7 +366,7 @@ func TestConfigHasAccessToken(t *testing.T) {
 				statusCode: http.StatusUnauthorized,
 			}
 		}
-		qt.Check(t, qt.Equals(req.Header.Get("Authorization"), "Bearer "+accessToken))
+		assert.Equal(t, "Bearer "+accessToken, req.Header.Get("Authorization"))
 		return nil
 	})
 	client := &http.Client{
@@ -396,7 +399,8 @@ func TestConfigErrorNilRequestBody(t *testing.T) {
 		}),
 	}
 	_, err := client.Get(ts.String() + "/test")
-	qt.Assert(t, qt.ErrorMatches(err, `.*cannot acquire auth.*always fails`))
+	require.Error(t, err)
+	require.Regexp(t, `.*cannot acquire auth.*always fails`, err.Error())
 }
 
 func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
@@ -424,7 +428,7 @@ func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
 		}
 		runNonFatal(t, func(t testing.TB) {
 			requestScope := authScopeFromRequest(t, req)
-			qt.Assert(t, qt.IsTrue(requestScope.Contains(requiredScope)), qt.Commentf("request scope: %q; required scope: %q", requestScope, requiredScope))
+			require.True(t, requestScope.Contains(requiredScope), "request scope: %q; required scope: %q", requestScope, requiredScope)
 		})
 		return nil
 	})
@@ -439,7 +443,7 @@ func TestLaterRequestCanUseEarlierTokenWithLargerScope(t *testing.T) {
 	assertRequest(ctx, t, ts, "/test/foo1", client, Scope{})
 	assertRequest(ctx, t, ts, "/test/foo2", client, Scope{})
 	// One token fetch should have been sufficient for both requests.
-	qt.Assert(t, qt.Equals(authCount, 1))
+	require.Equal(t, 1, authCount)
 }
 
 func TestAuthServerRejectsRequestsWithTooMuchScope(t *testing.T) {
@@ -471,7 +475,7 @@ func TestAuthServerRejectsRequestsWithTooMuchScope(t *testing.T) {
 			}
 		}
 		runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.IsTrue(authScopeFromRequest(t, req).Contains(requiredScope)))
+			require.True(t, authScopeFromRequest(t, req).Contains(requiredScope))
 		})
 		return nil
 	})
@@ -491,10 +495,10 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 	authSrv := newAuthServer(t, func(req *http.Request) (any, *httpError) {
 		authCount++
 		if !runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.Equals(req.Form.Get("grant_type"), "refresh_token"))
-			qt.Assert(t, qt.Not(qt.Equals(req.Form.Get("client_id"), "")))
-			qt.Assert(t, qt.Equals(req.Form.Get("service"), "someService"))
-			qt.Assert(t, qt.Equals(req.Form.Get("refresh_token"), "someRefreshToken"))
+			require.Equal(t, "refresh_token", req.Form.Get("grant_type"))
+			require.NotEqual(t, "", req.Form.Get("client_id"))
+			require.Equal(t, "someService", req.Form.Get("service"))
+			require.Equal(t, "someRefreshToken", req.Form.Get("refresh_token"))
 		}) {
 			return nil, &httpError{
 				statusCode: http.StatusInternalServerError,
@@ -520,7 +524,7 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 			}
 		}
 		runNonFatal(t, func(t testing.TB) {
-			qt.Assert(t, qt.IsTrue(authScopeFromRequest(t, req).Contains(requiredScope)))
+			require.True(t, authScopeFromRequest(t, req).Contains(requiredScope))
 		})
 		return nil
 	})
@@ -546,7 +550,7 @@ func TestAuthRequestUsesRefreshTokenFromConfig(t *testing.T) {
 	time.Sleep(1100 * time.Millisecond)
 	assertRequest(context.Background(), t, ts, "/test", client, requiredScope)
 	// Check that it actually has had to acquire two tokens.
-	qt.Assert(t, qt.Equals(authCount, 2))
+	require.Equal(t, 2, authCount)
 }
 
 func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
@@ -555,7 +559,7 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 		authCount++
 		if !runNonFatal(t, func(t testing.TB) {
 			// The client should be using a different refresh token each time
-			qt.Assert(t, qt.Equals(req.Form.Get("refresh_token"), fmt.Sprintf("someRefreshToken%d", authCount)))
+			require.Equal(t, fmt.Sprintf("someRefreshToken%d", authCount), req.Form.Get("refresh_token"))
 		}) {
 			return nil, &httpError{
 				statusCode: http.StatusInternalServerError,
@@ -587,7 +591,7 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 		}
 		runNonFatal(t, func(t testing.TB) {
 			requestScope := authScopeFromRequest(t, req)
-			qt.Assert(t, qt.IsTrue(requestScope.Contains(requiredScope)), qt.Commentf("request scope: %q; required scope: %q", requestScope, requiredScope))
+			require.True(t, requestScope.Contains(requiredScope), "request scope: %q; required scope: %q", requestScope, requiredScope)
 		})
 		return nil
 	})
@@ -616,7 +620,7 @@ func TestAuthRequestUsesRefreshTokenFromAuthServer(t *testing.T) {
 			Action:       ActionPull,
 		}))
 	}
-	qt.Assert(t, qt.Equals(authCount, numRequests))
+	require.Equal(t, numRequests, authCount)
 }
 
 func assertRequest(ctx context.Context, t testing.TB, tsURL *url.URL, path string, client *http.Client, needScope Scope) {
@@ -631,16 +635,16 @@ func assertRequest(ctx context.Context, t testing.TB, tsURL *url.URL, path strin
 
 func assertRequest1(ctx context.Context, t testing.TB, tsURL *url.URL, path string, client *http.Client) {
 	req, err := http.NewRequestWithContext(ctx, "POST", tsURL.String()+path, strings.NewReader("test body"))
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	// Set ContentLength to -1 to prevent net/http from calling GetBody automatically,
 	// thus testing the GetBody-calling code inside registry.doRequest.
 	req.ContentLength = -1
 	resp, err := client.Do(req)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	defer resp.Body.Close()
-	qt.Assert(t, qt.Equals(resp.StatusCode, http.StatusOK))
+	require.Equal(t, http.StatusOK, resp.StatusCode)
 	data, _ := io.ReadAll(resp.Body)
-	qt.Assert(t, qt.Equals(string(data), "test ok"))
+	require.Equal(t, "test ok", string(data))
 }
 
 // newAuthServer returns the URL for an auth server that uses auth to service authorization
@@ -754,7 +758,7 @@ func authScopeFromRequest(t testing.TB, req *http.Request) Scope {
 		t.Fatalf("token %q is not bearer token", h)
 	}
 	tok, err := parseToken(tokStr)
-	qt.Assert(t, qt.IsNil(err))
+	require.NoError(t, err)
 	return tok.scope
 }
 

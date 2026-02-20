@@ -20,7 +20,7 @@ import (
 	"slices"
 	"strings"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 func (r *Registry) Repositories(_ context.Context, startAfter string) iter.Seq2[string, error] {

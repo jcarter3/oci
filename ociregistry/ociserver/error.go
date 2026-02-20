@@ -17,7 +17,7 @@ package ociserver
 import (
 	"fmt"
 
-	"cuelabs.dev/go/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry"
 )
 
 func withHTTPCode(statusCode int, err error) error {

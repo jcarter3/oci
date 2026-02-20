@@ -20,12 +20,12 @@ import (
 	"regexp"
 	"strings"
 
-	"cuelabs.dev/go/oci/ociregistry"
-	"cuelabs.dev/go/oci/ociregistry/ociclient"
-	"cuelabs.dev/go/oci/ociregistry/ocidebug"
-	"cuelabs.dev/go/oci/ociregistry/ocifilter"
-	"cuelabs.dev/go/oci/ociregistry/ocimem"
-	"cuelabs.dev/go/oci/ociregistry/ociunify"
+	"github.com/jcarter3/oci/ociregistry"
+	"github.com/jcarter3/oci/ociregistry/ociclient"
+	"github.com/jcarter3/oci/ociregistry/ocidebug"
+	"github.com/jcarter3/oci/ociregistry/ocifilter"
+	"github.com/jcarter3/oci/ociregistry/ocimem"
+	"github.com/jcarter3/oci/ociregistry/ociunify"
 )
 
 var kindToRegistryType = make(map[string]reflect.Type)

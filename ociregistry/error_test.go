@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-quicktest/qt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var errorTests = []struct {
@@ -65,21 +66,31 @@ var errorTests = []struct {
 func TestError(t *testing.T) {
 	for _, test := range errorTests {
 		t.Run(test.testName, func(t *testing.T) {
-			qt.Check(t, qt.ErrorMatches(test.err, test.wantMsg))
+			assert.EqualError(t, test.err, test.wantMsg)
 			data, httpStatus := MarshalError(test.err)
-			qt.Check(t, qt.Equals(httpStatus, test.wantMarshalHTTPStatus))
-			qt.Check(t, qt.JSONEquals(data, test.wantMarshalData), qt.Commentf("marshal data: %s", data))
+			assert.Equal(t, test.wantMarshalHTTPStatus, httpStatus)
+			assertJSONEqual(t, test.wantMarshalData, rawJSONMessage(data), "marshal data: %s", data)
 
 			// Check that the marshaled error unmarshals into WireError OK and
 			// that the code matches appropriately.
 			var errs *WireErrors
 			err := json.Unmarshal(data, &errs)
-			qt.Assert(t, qt.IsNil(err))
+			require.NoError(t, err)
 			if ociErr := Error(nil); errors.As(test.err, &ociErr) {
-				qt.Assert(t, qt.IsTrue(errors.Is(errs, NewError("something", ociErr.Code(), nil))))
+				require.True(t, errors.Is(errs, NewError("something", ociErr.Code(), nil)))
 			}
 		})
 	}
+}
+
+// assertJSONEqual compares two values by marshaling them to JSON and comparing the results.
+func assertJSONEqual(t *testing.T, expected, actual any, msgAndArgs ...any) {
+	t.Helper()
+	expectedJSON, err := json.Marshal(expected)
+	require.NoError(t, err, "failed to marshal expected value")
+	actualJSON, err := json.Marshal(actual)
+	require.NoError(t, err, "failed to marshal actual value")
+	assert.JSONEq(t, string(expectedJSON), string(actualJSON), msgAndArgs...)
 }
 
 type rawJSONMessage string
