@@ -209,6 +209,15 @@ type Deleter interface {
 	DeleteTag(ctx context.Context, repo string, name string) error
 }
 
+type TagsParameters struct {
+	StartAfter string
+	Limit      int
+}
+
+type ReferrersParameters struct {
+	ArtifactType string
+}
+
 // Lister defines registry operations that enumerate objects within the registry.
 // TODO support resumption from a given point.
 type Lister interface {
@@ -219,14 +228,14 @@ type Lister interface {
 	//
 	// If limit is greater than zero, at most that many tags will be returned.
 	// If limit is less than or equal to zero, all tags will be returned.
-	Tags(ctx context.Context, repo string, startAfter string, limit int) iter.Seq2[string, error]
+	Tags(ctx context.Context, repo string, params TagsParameters) iter.Seq2[string, error]
 
 	// Referrers returns an iterator that can be used to iterate over all
 	// the manifests that have the given digest as their Subject.
 	// If artifactType is non-zero, the results will be restricted to
 	// only manifests with that type.
 	// TODO is it possible to ask for multiple artifact types?
-	Referrers(ctx context.Context, repo string, digest Digest, artifactType string) iter.Seq2[Descriptor, error]
+	Referrers(ctx context.Context, repo string, digest Digest, params ReferrersParameters) iter.Seq2[Descriptor, error]
 }
 
 // Extension defines registry operations that are not currently part of the spec, but are additional optional operations
