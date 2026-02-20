@@ -56,7 +56,7 @@ type Funcs struct {
 	DeleteManifest_        func(ctx context.Context, repo string, digest Digest) error
 	DeleteTag_             func(ctx context.Context, repo string, name string) error
 	Repositories_          func(ctx context.Context, startAfter string) iter.Seq2[string, error]
-	Tags_                  func(ctx context.Context, repo string, startAfter string) iter.Seq2[string, error]
+	Tags_                  func(ctx context.Context, repo string, startAfter string, limit int) iter.Seq2[string, error]
 	Referrers_             func(ctx context.Context, repo string, digest Digest, artifactType string) iter.Seq2[Descriptor, error]
 }
 
@@ -182,9 +182,9 @@ func (f *Funcs) Repositories(ctx context.Context, startAfter string) iter.Seq2[s
 	return ErrorSeq[string](f.newError(ctx, "Repositories", ""))
 }
 
-func (f *Funcs) Tags(ctx context.Context, repo string, startAfter string) iter.Seq2[string, error] {
+func (f *Funcs) Tags(ctx context.Context, repo string, startAfter string, limit int) iter.Seq2[string, error] {
 	if f != nil && f.Tags_ != nil {
-		return f.Tags_(ctx, repo, startAfter)
+		return f.Tags_(ctx, repo, startAfter, limit)
 	}
 	return ErrorSeq[string](f.newError(ctx, "Tags", repo))
 }

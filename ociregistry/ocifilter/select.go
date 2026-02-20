@@ -214,11 +214,11 @@ func (r *accessCheckerRegistry) Repositories(ctx context.Context, startAfter str
 	}
 }
 
-func (r *accessCheckerRegistry) Tags(ctx context.Context, repo, startAfter string) iter.Seq2[string, error] {
+func (r *accessCheckerRegistry) Tags(ctx context.Context, repo, startAfter string, limit int) iter.Seq2[string, error] {
 	if err := r.check(repo, AccessList); err != nil {
 		return ociregistry.ErrorSeq[string](err)
 	}
-	return r.r.Tags(ctx, repo, startAfter)
+	return r.r.Tags(ctx, repo, startAfter, limit)
 }
 
 func (r *accessCheckerRegistry) Referrers(ctx context.Context, repo string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {

@@ -153,7 +153,7 @@ func TestNonJSONErrorResponse(t *testing.T) {
 		return err
 	})
 	assertStatusCode(func(ctx context.Context, r ociregistry.Interface) error {
-		_, err := ociregistry.All(r.Tags(ctx, "foo/read", ""))
+		_, err := ociregistry.All(r.Tags(ctx, "foo/read", "", 0))
 		return err
 	})
 	assertStatusCode(func(ctx context.Context, r ociregistry.Interface) error {
