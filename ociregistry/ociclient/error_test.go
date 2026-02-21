@@ -153,11 +153,11 @@ func TestNonJSONErrorResponse(t *testing.T) {
 		return err
 	})
 	assertStatusCode(func(ctx context.Context, r ociregistry.Interface) error {
-		_, err := ociregistry.All(r.Tags(ctx, "foo/read", "", 0))
+		_, err := ociregistry.All(r.Tags(ctx, "foo/read", nil))
 		return err
 	})
 	assertStatusCode(func(ctx context.Context, r ociregistry.Interface) error {
-		_, err := ociregistry.All(r.Referrers(ctx, "foo/read", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", ""))
+		_, err := ociregistry.All(r.Referrers(ctx, "foo/read", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", nil))
 		return err
 	})
 }

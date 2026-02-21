@@ -43,7 +43,10 @@ type listTags struct {
 }
 
 func (r *registry) handleTagsList(ctx context.Context, resp http.ResponseWriter, req *http.Request, rreq *ocirequest.Request) error {
-	tags, link, err := r.nextListResults(req, rreq, r.backend.Tags(ctx, rreq.Repo, rreq.ListLast, rreq.ListN))
+	tags, link, err := r.nextListResults(req, rreq, r.backend.Tags(ctx, rreq.Repo, &ociregistry.TagsParameters{
+		StartAfter: rreq.ListLast,
+		Limit:      rreq.ListN,
+	}))
 	if err != nil {
 		return err
 	}
@@ -99,7 +102,9 @@ func (r *registry) handleReferrersList(ctx context.Context, resp http.ResponseWr
 	// request, linked to the next one with a Link header. However, arranging that is non-trivial
 	// because we'd need a way to return a link value to the client that enables a fresh
 	// call to Referrers to start where the old one left off. For now, we'll punt.
-	for desc, err := range r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), artifactType) {
+	for desc, err := range r.backend.Referrers(ctx, rreq.Repo, ociregistry.Digest(rreq.Digest), &ociregistry.ReferrersParameters{
+		ArtifactType: artifactType,
+	}) {
 		if err != nil {
 			return err
 		}

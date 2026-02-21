@@ -644,55 +644,55 @@ func TestTagsLimit(t *testing.T) {
 	})
 
 	t.Run("ZeroLimitReturnsAll", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "", 0))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", nil))
 		require.NoError(t, err)
 		require.Equal(t, []string{"alpha", "bravo", "charlie", "delta", "echo"}, tags)
 	})
 
 	t.Run("NegativeLimitReturnsAll", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "", -1))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", &ociregistry.TagsParameters{Limit: -1}))
 		require.NoError(t, err)
 		require.Equal(t, []string{"alpha", "bravo", "charlie", "delta", "echo"}, tags)
 	})
 
 	t.Run("LimitSmallerThanTotal", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "", 3))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", &ociregistry.TagsParameters{Limit: 3}))
 		require.NoError(t, err)
 		require.Equal(t, []string{"alpha", "bravo", "charlie"}, tags)
 	})
 
 	t.Run("LimitOfOne", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "", 1))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", &ociregistry.TagsParameters{Limit: 1}))
 		require.NoError(t, err)
 		require.Equal(t, []string{"alpha"}, tags)
 	})
 
 	t.Run("LimitLargerThanTotal", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "", 100))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", &ociregistry.TagsParameters{Limit: 100}))
 		require.NoError(t, err)
 		require.Equal(t, []string{"alpha", "bravo", "charlie", "delta", "echo"}, tags)
 	})
 
 	t.Run("LimitEqualToTotal", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "", 5))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", &ociregistry.TagsParameters{Limit: 5}))
 		require.NoError(t, err)
 		require.Equal(t, []string{"alpha", "bravo", "charlie", "delta", "echo"}, tags)
 	})
 
 	t.Run("LimitWithStartAfter", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "bravo", 2))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", &ociregistry.TagsParameters{StartAfter: "bravo", Limit: 2}))
 		require.NoError(t, err)
 		require.Equal(t, []string{"charlie", "delta"}, tags)
 	})
 
 	t.Run("LimitWithStartAfterReturnsAll", func(t *testing.T) {
-		tags, err := ociregistry.All(r.R.Tags(ctx, "test", "bravo", 0))
+		tags, err := ociregistry.All(r.R.Tags(ctx, "test", &ociregistry.TagsParameters{StartAfter: "bravo"}))
 		require.NoError(t, err)
 		require.Equal(t, []string{"charlie", "delta", "echo"}, tags)
 	})
 
 	t.Run("NonExistentRepo", func(t *testing.T) {
-		_, err := ociregistry.All(r.R.Tags(ctx, "nonexistent", "", 3))
+		_, err := ociregistry.All(r.R.Tags(ctx, "nonexistent", &ociregistry.TagsParameters{Limit: 3}))
 		require.Error(t, err)
 	})
 }

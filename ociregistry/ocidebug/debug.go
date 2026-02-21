@@ -147,11 +147,15 @@ func (r *logger) PushManifest(ctx context.Context, repoName string, tag string, 
 	return desc, err
 }
 
-func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, artifactType string) iter.Seq2[ociregistry.Descriptor, error] {
+func (r *logger) Referrers(ctx context.Context, repoName string, digest ociregistry.Digest, params *ociregistry.ReferrersParameters) iter.Seq2[ociregistry.Descriptor, error] {
+	var artifactType string
+	if params != nil {
+		artifactType = params.ArtifactType
+	}
 	return logIterReturn(
 		r,
 		fmt.Sprintf("Referrers %s %s %q", repoName, digest, artifactType),
-		r.r.Referrers(ctx, repoName, digest, artifactType),
+		r.r.Referrers(ctx, repoName, digest, params),
 	)
 }
 
@@ -163,11 +167,17 @@ func (r *logger) Repositories(ctx context.Context, startAfter string) iter.Seq2[
 	)
 }
 
-func (r *logger) Tags(ctx context.Context, repoName string, startAfter string, limit int) iter.Seq2[string, error] {
+func (r *logger) Tags(ctx context.Context, repoName string, params *ociregistry.TagsParameters) iter.Seq2[string, error] {
+	var startAfter string
+	var limit int
+	if params != nil {
+		startAfter = params.StartAfter
+		limit = params.Limit
+	}
 	return logIterReturn(
 		r,
 		fmt.Sprintf("Tags %s startAfter: %q limit: %d", repoName, startAfter, limit),
-		r.r.Tags(ctx, repoName, startAfter, limit),
+		r.r.Tags(ctx, repoName, params),
 	)
 }
 
