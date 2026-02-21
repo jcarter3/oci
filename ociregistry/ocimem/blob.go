@@ -80,6 +80,7 @@ func NewBuffer(commit func(b *Buffer) error, uuid string) *Buffer {
 	}
 }
 
+// Cancel cancels the blob upload and frees associated resources.
 func (b *Buffer) Cancel() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -87,16 +88,19 @@ func (b *Buffer) Cancel() error {
 	return nil
 }
 
+// Close closes the writer but does not abort the upload.
 func (b *Buffer) Close() error {
 	return nil
 }
 
+// Size returns the number of bytes written to this buffer so far.
 func (b *Buffer) Size() int64 {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return int64(len(b.buf))
 }
 
+// ChunkSize returns the maximum number of bytes to upload at a single time.
 func (b *Buffer) ChunkSize() int {
 	return 8 * 1024 // 8KiB; not really important
 }

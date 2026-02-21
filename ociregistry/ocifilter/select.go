@@ -22,20 +22,20 @@ import (
 	"github.com/jcarter3/oci/ociregistry"
 )
 
-// AccessKind
+// AccessKind represents the type of access being performed on a registry.
 type AccessKind int
 
 const (
-	// [ociregistry.Reader] methods.
+	// AccessRead represents [ociregistry.Reader] methods.
 	AccessRead AccessKind = iota
 
-	// [ociregistry.Writer] methods.
+	// AccessWrite represents [ociregistry.Writer] methods.
 	AccessWrite
 
-	// [ociregistry.Deleter] methods.
+	// AccessDelete represents [ociregistry.Deleter] methods.
 	AccessDelete
 
-	// [ociregistry.Lister] methods.
+	// AccessList represents [ociregistry.Lister] methods.
 	AccessList
 )
 

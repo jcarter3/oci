@@ -85,7 +85,7 @@ linters:
         - name: error-strings
         - name: error-naming
         - name: exported
-          disabled: true
+          disabled: false
         - name: increment-decrement
         - name: var-naming
           disabled: true
@@ -123,7 +123,6 @@ linters:
   exclusions:
     generated: strict
     presets:
-      - comments
       - std-error-handling
       - common-false-positives
     rules:

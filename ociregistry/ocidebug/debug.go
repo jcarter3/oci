@@ -27,6 +27,8 @@ import (
 	"github.com/jcarter3/oci/ociregistry"
 )
 
+// New returns a new [ociregistry.Interface] that wraps r and logs all operations
+// using the given logf function. If logf is nil, [log.Printf] is used.
 func New(r ociregistry.Interface, logf func(f string, a ...any)) ociregistry.Interface {
 	if logf == nil {
 		logf = log.Printf

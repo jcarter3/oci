@@ -23,6 +23,7 @@ import (
 
 // This file implements the ociregistry.Reader methods.
 
+// GetBlob returns the content of the blob with the given digest.
 func (r *Registry) GetBlob(ctx context.Context, repoName string, dig ociregistry.Digest) (ociregistry.BlobReader, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -33,6 +34,7 @@ func (r *Registry) GetBlob(ctx context.Context, repoName string, dig ociregistry
 	return NewBytesReader(b.data, b.descriptor()), nil
 }
 
+// GetBlobRange returns a range of bytes from the blob with the given digest.
 func (r *Registry) GetBlobRange(ctx context.Context, repoName string, dig ociregistry.Digest, o0, o1 int64) (ociregistry.BlobReader, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -49,6 +51,7 @@ func (r *Registry) GetBlobRange(ctx context.Context, repoName string, dig ocireg
 	return NewBytesReader(b.data[o0:o1], b.descriptor()), nil
 }
 
+// GetManifest returns the content of the manifest with the given digest.
 func (r *Registry) GetManifest(ctx context.Context, repoName string, dig ociregistry.Digest) (ociregistry.BlobReader, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -59,6 +62,7 @@ func (r *Registry) GetManifest(ctx context.Context, repoName string, dig ociregi
 	return NewBytesReader(b.data, b.descriptor()), nil
 }
 
+// GetTag returns the content of the manifest with the given tag.
 func (r *Registry) GetTag(ctx context.Context, repoName string, tagName string) (ociregistry.BlobReader, error) {
 	desc, err := r.ResolveTag(ctx, repoName, tagName)
 	if err != nil {
@@ -67,6 +71,7 @@ func (r *Registry) GetTag(ctx context.Context, repoName string, tagName string) 
 	return r.GetManifest(ctx, repoName, desc.Digest)
 }
 
+// ResolveTag returns the descriptor for the manifest with the given tag.
 func (r *Registry) ResolveTag(ctx context.Context, repoName string, tagName string) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -81,6 +86,7 @@ func (r *Registry) ResolveTag(ctx context.Context, repoName string, tagName stri
 	return desc, nil
 }
 
+// ResolveBlob returns the descriptor for the blob with the given digest.
 func (r *Registry) ResolveBlob(ctx context.Context, repoName string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -91,6 +97,7 @@ func (r *Registry) ResolveBlob(ctx context.Context, repoName string, digest ocir
 	return b.descriptor(), nil
 }
 
+// ResolveManifest returns the descriptor for the manifest with the given digest.
 func (r *Registry) ResolveManifest(ctx context.Context, repoName string, digest ociregistry.Digest) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

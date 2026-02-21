@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-// AuthConfig represents access to system level (e.g. config-file or command-execution based)
+// Config represents access to system level (e.g. config-file or command-execution based)
 // configuration information.
 //
 // It's OK to call EntryForRegistry concurrently.
@@ -46,6 +46,7 @@ type ConfigFile struct {
 	runner HelperRunner
 }
 
+// ErrHelperNotFound is returned when a configured credential helper executable cannot be found.
 var ErrHelperNotFound = errors.New("helper not found")
 
 // HelperRunner is the function used to execute auth "helper"

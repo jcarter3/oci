@@ -27,6 +27,7 @@ var (
 	errCannotDeleteTaggedManifest = fmt.Errorf("%w: deletion of tagged manifest not permitted", ociregistry.ErrDenied)
 )
 
+// DeleteBlob deletes the blob with the given digest from the named repository.
 func (r *Registry) DeleteBlob(ctx context.Context, repoName string, digest ociregistry.Digest) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -52,6 +53,7 @@ func (r *Registry) DeleteBlob(ctx context.Context, repoName string, digest ocire
 	return nil
 }
 
+// DeleteManifest deletes the manifest with the given digest from the named repository.
 func (r *Registry) DeleteManifest(ctx context.Context, repoName string, digest ociregistry.Digest) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -73,6 +75,7 @@ func (r *Registry) DeleteManifest(ctx context.Context, repoName string, digest o
 	return nil
 }
 
+// DeleteTag deletes the given tag from the named repository.
 func (r *Registry) DeleteTag(ctx context.Context, repoName string, tagName string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -20,6 +20,7 @@ import (
 // TODO decide on a good value for this.
 const oauthClientID = "cuelabs-ociauth"
 
+// ErrNoAuth is returned when no authorization token is available to add to a request.
 var ErrNoAuth = fmt.Errorf("no authorization token available to add to request")
 
 // stdTransport implements [http.RoundTripper] by acquiring authorization tokens
@@ -35,6 +36,8 @@ type stdTransport struct {
 	registries map[string]*registry
 }
 
+// StdTransportParams holds the parameters for creating a new [http.RoundTripper]
+// that adds OCI registry authentication to HTTP requests.
 type StdTransportParams struct {
 	// Config represents the underlying configuration file information.
 	// It is consulted for authorization information on the hosts

@@ -23,14 +23,18 @@ import (
 	"github.com/jcarter3/oci/ociregistry"
 )
 
+// Options holds configuration for the unified registry.
 type Options struct {
 	ReadPolicy ReadPolicy
 }
 
+// ReadPolicy determines how the unified registry reads from its two backends.
 type ReadPolicy int
 
 const (
+	// ReadSequential reads from both backends sequentially.
 	ReadSequential ReadPolicy = iota
+	// ReadConcurrent reads from both backends concurrently.
 	ReadConcurrent
 )
 

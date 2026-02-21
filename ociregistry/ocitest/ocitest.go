@@ -34,6 +34,8 @@ import (
 	"github.com/jcarter3/oci/ociregistry"
 )
 
+// Registry wraps an [ociregistry.Interface] with convenience methods for
+// pushing and verifying content in tests.
 type Registry struct {
 	T *testing.T
 	R ociregistry.Interface
@@ -262,6 +264,7 @@ func fillBlobDescriptor(d ociregistry.Descriptor, blobs map[string]ociregistry.D
 	return d
 }
 
+// MustPushBlob pushes a blob to the given repository and fails the test if it encounters an error.
 func (r Registry) MustPushBlob(repo string, data []byte) ociregistry.Descriptor {
 	desc := ociregistry.Descriptor{
 		Digest:    digest.FromBytes(data),
@@ -273,6 +276,8 @@ func (r Registry) MustPushBlob(repo string, data []byte) ociregistry.Descriptor 
 	return desc1
 }
 
+// MustPushManifest marshals jsonObject as a manifest, pushes it to the given repository
+// with the given tag, and fails the test if it encounters an error.
 func (r Registry) MustPushManifest(repo string, jsonObject any, tag string) ([]byte, ociregistry.Descriptor) {
 	data, err := json.Marshal(jsonObject)
 	require.NoError(r.T, err)
@@ -295,6 +300,8 @@ func (r Registry) MustPushManifest(repo string, jsonObject any, tag string) ([]b
 	return data, desc1
 }
 
+// Repo holds the information needed to interact with a specific repository
+// within a registry during tests.
 type Repo struct {
 	T    *testing.T
 	Name string

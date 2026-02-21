@@ -43,6 +43,7 @@ import (
 // TODO this should be configurable in the API.
 const debug = false
 
+// Options holds configuration for creating a new OCI registry client.
 type Options struct {
 	// DebugID is used to prefix any log messages printed by the client.
 	DebugID string

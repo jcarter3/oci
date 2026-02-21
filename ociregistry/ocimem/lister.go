@@ -23,12 +23,14 @@ import (
 	"github.com/jcarter3/oci/ociregistry"
 )
 
+// Repositories returns an iterator over all repository names in the registry.
 func (r *Registry) Repositories(_ context.Context, startAfter string) iter.Seq2[string, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return mapKeysIter(r.repos, strings.Compare, startAfter)
 }
 
+// Tags returns an iterator over tags in the named repository.
 func (r *Registry) Tags(_ context.Context, repoName string, params *ociregistry.TagsParameters) iter.Seq2[string, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -45,6 +47,7 @@ func (r *Registry) Tags(_ context.Context, repoName string, params *ociregistry.
 	return ociregistry.LimitIter(mapKeysIter(repo.tags, strings.Compare, startAfter), limit)
 }
 
+// Referrers returns an iterator over descriptors that refer to the given digest.
 func (r *Registry) Referrers(_ context.Context, repoName string, digest ociregistry.Digest, params *ociregistry.ReferrersParameters) iter.Seq2[ociregistry.Descriptor, error] {
 	r.mu.Lock()
 	defer r.mu.Unlock()

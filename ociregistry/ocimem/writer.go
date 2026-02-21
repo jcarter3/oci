@@ -27,6 +27,7 @@ import (
 
 // This file implements the ociregistry.Writer methods.
 
+// PushBlob pushes a blob to the named repository.
 func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregistry.Descriptor, content io.Reader) (ociregistry.Descriptor, error) {
 	data, err := io.ReadAll(content)
 	if err != nil {
@@ -46,6 +47,7 @@ func (r *Registry) PushBlob(ctx context.Context, repoName string, desc ociregist
 	return desc, nil
 }
 
+// PushBlobChunked starts a chunked blob upload to the named repository.
 func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, chunkSize int) (ociregistry.BlobWriter, error) {
 	// TODO(mvdan): Why does the ocimem implementation allow a PATCH on an upload ID which doesn't exist?
 	// The tests in ociserver make this assumption, so they break without this bit of code.
@@ -56,6 +58,7 @@ func (r *Registry) PushBlobChunked(ctx context.Context, repoName string, chunkSi
 	return r.PushBlobChunkedResume(ctx, repoName, "", 0, chunkSize)
 }
 
+// PushBlobChunkedResume resumes a previously started chunked blob upload.
 func (r *Registry) PushBlobChunkedResume(ctx context.Context, repoName, id string, offset int64, chunkSize int) (ociregistry.BlobWriter, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -78,6 +81,7 @@ func (r *Registry) PushBlobChunkedResume(ctx context.Context, repoName, id strin
 	return b, nil
 }
 
+// MountBlob makes a blob from one repository available in another.
 func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -95,6 +99,7 @@ func (r *Registry) MountBlob(ctx context.Context, fromRepo, toRepo string, dig o
 
 var errCannotOverwriteTag = fmt.Errorf("%w: cannot overwrite tag", ociregistry.ErrDenied)
 
+// PushManifest pushes a manifest to the named repository, optionally tagging it.
 func (r *Registry) PushManifest(ctx context.Context, repoName string, tag string, data []byte, mediaType string) (ociregistry.Descriptor, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

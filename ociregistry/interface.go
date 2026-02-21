@@ -77,17 +77,23 @@ type Interface interface {
 	private()
 }
 
+// ReadWriter combines the [Reader] and [Writer] interfaces.
 type ReadWriter interface {
 	Reader
 	Writer
 }
 
+// Type aliases for commonly used OCI types.
 type (
-	Digest     = ociref.Digest
+	// Digest is a content-addressable digest. It is an alias for [ociref.Digest].
+	Digest = ociref.Digest
+	// Descriptor describes the disposition of targeted content. It is an alias for [ocispec.Descriptor].
 	Descriptor = ocispec.Descriptor
-	Manifest   = ocispec.Manifest
+	// Manifest provides the `application/vnd.oci.image.manifest.v1+json` mediatype structure. It is an alias for [ocispec.Manifest].
+	Manifest = ocispec.Manifest
 )
 
+// Reader defines registry operations that read blobs, manifests and tags.
 type Reader interface {
 	// GetBlob returns the content of the blob with the given digest.
 	// The context also controls the lifetime of the returned BlobReader.
@@ -209,11 +215,13 @@ type Deleter interface {
 	DeleteTag(ctx context.Context, repo string, name string) error
 }
 
+// TagsParameters holds optional parameters for the [Lister.Tags] method.
 type TagsParameters struct {
 	StartAfter string
 	Limit      int
 }
 
+// ReferrersParameters holds optional parameters for the [Lister.Referrers] method.
 type ReferrersParameters struct {
 	ArtifactType string
 }
