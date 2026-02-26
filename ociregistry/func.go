@@ -51,7 +51,7 @@ type Funcs struct {
 	PushBlobChunked_       func(ctx context.Context, repo string, chunkSize int) (BlobWriter, error)
 	PushBlobChunkedResume_ func(ctx context.Context, repo, id string, offset int64, chunkSize int) (BlobWriter, error)
 	MountBlob_             func(ctx context.Context, fromRepo, toRepo string, digest Digest) (Descriptor, error)
-	PushManifest_          func(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (Descriptor, error)
+	PushManifest_          func(ctx context.Context, repo string, contents []byte, mediaType string, params *PushManifestParameters) (Descriptor, error)
 	DeleteBlob_            func(ctx context.Context, repo string, digest Digest) error
 	DeleteManifest_        func(ctx context.Context, repo string, digest Digest) error
 	DeleteTag_             func(ctx context.Context, repo string, name string) error
@@ -159,9 +159,9 @@ func (f *Funcs) MountBlob(ctx context.Context, fromRepo, toRepo string, digest D
 }
 
 // PushManifest implements [Interface.PushManifest] by calling f.PushManifest_.
-func (f *Funcs) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (Descriptor, error) {
+func (f *Funcs) PushManifest(ctx context.Context, repo string, contents []byte, mediaType string, params *PushManifestParameters) (Descriptor, error) {
 	if f != nil && f.PushManifest_ != nil {
-		return f.PushManifest_(ctx, repo, tag, contents, mediaType)
+		return f.PushManifest_(ctx, repo, contents, mediaType, params)
 	}
 	return Descriptor{}, f.newError(ctx, "PushManifest", repo)
 }

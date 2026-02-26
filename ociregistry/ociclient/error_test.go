@@ -136,7 +136,9 @@ func TestNonJSONErrorResponse(t *testing.T) {
 		return err
 	})
 	assertStatusCode(func(ctx context.Context, r ociregistry.Interface) error {
-		_, err := r.PushManifest(ctx, "foo/write", "sometag", []byte("something"), "application/json")
+		_, err := r.PushManifest(ctx, "foo/write", []byte("something"), "application/json", &ociregistry.PushManifestParameters{
+			Tags: []string{"sometag"},
+		})
 		return err
 	})
 	assertStatusCode(func(ctx context.Context, r ociregistry.Interface) error {

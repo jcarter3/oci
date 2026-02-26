@@ -140,7 +140,7 @@ func PushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (P
 	}
 	// Then push the manifests that refer to the blobs.
 	for _, mc := range manifestSeq {
-		_, err := r.PushManifest(ctx, repo, "", mc.data, mc.desc.MediaType)
+		_, err := r.PushManifest(ctx, repo, mc.data, mc.desc.MediaType, nil)
 		if err != nil {
 			return PushedRepoContent{}, fmt.Errorf("cannot push manifest %q in repo %q: %v", mc.id, repo, err)
 		}
@@ -151,7 +151,9 @@ func PushRepoContent(r ociregistry.Interface, repo string, repoc RepoContent) (P
 		if !ok {
 			return PushedRepoContent{}, fmt.Errorf("tag %q refers to unknown manifest id %q", tag, id)
 		}
-		_, err := r.PushManifest(ctx, repo, tag, mc.data, mc.desc.MediaType)
+		_, err := r.PushManifest(ctx, repo, mc.data, mc.desc.MediaType, &ociregistry.PushManifestParameters{
+			Tags: []string{tag},
+		})
 		if err != nil {
 			return PushedRepoContent{}, fmt.Errorf("cannot push tag %q in repo %q: %v", id, repo, err)
 		}
@@ -292,7 +294,13 @@ func (r Registry) MustPushManifest(repo string, jsonObject any, tag string) ([]b
 		Size:      int64(len(data)),
 		MediaType: mt.MediaType,
 	}
-	desc1, err := r.R.PushManifest(context.Background(), repo, tag, data, mt.MediaType)
+	var params *ociregistry.PushManifestParameters
+	if tag != "" {
+		params = &ociregistry.PushManifestParameters{
+			Tags: []string{tag},
+		}
+	}
+	desc1, err := r.R.PushManifest(context.Background(), repo, data, mt.MediaType, params)
 	require.NoError(r.T, err)
 	require.Equal(r.T, desc.Digest, desc1.Digest)
 	require.Equal(r.T, desc.Size, desc1.Size)
