@@ -166,11 +166,11 @@ func (r *accessCheckerRegistry) MountBlob(ctx context.Context, fromRepo, toRepo 
 	return r.r.MountBlob(ctx, fromRepo, toRepo, digest)
 }
 
-func (r *accessCheckerRegistry) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
+func (r *accessCheckerRegistry) PushManifest(ctx context.Context, repo string, contents []byte, mediaType string, params *ociregistry.PushManifestParameters) (ociregistry.Descriptor, error) {
 	if err := r.check(repo, AccessWrite); err != nil {
 		return ociregistry.Descriptor{}, err
 	}
-	return r.r.PushManifest(ctx, repo, tag, contents, mediaType)
+	return r.r.PushManifest(ctx, repo, contents, mediaType, params)
 }
 
 func (r *accessCheckerRegistry) DeleteBlob(ctx context.Context, repo string, digest ociregistry.Digest) error {

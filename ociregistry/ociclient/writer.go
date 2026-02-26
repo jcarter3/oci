@@ -34,34 +34,85 @@ import (
 
 // This file implements the ociregistry.Writer methods.
 
-func (c *client) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
+func (c *client) PushManifest(ctx context.Context, repo string, contents []byte, mediaType string, params *ociregistry.PushManifestParameters) (ociregistry.Descriptor, error) {
 	if mediaType == "" {
 		return ociregistry.Descriptor{}, fmt.Errorf("PushManifest called with empty mediaType")
 	}
+	var dig ociregistry.Digest
+	if params != nil && params.Digest != "" {
+		dig = params.Digest
+	} else {
+		dig = digest.FromBytes(contents)
+	}
 	desc := ociregistry.Descriptor{
-		Digest:    digest.FromBytes(contents),
+		Digest:    dig,
 		Size:      int64(len(contents)),
 		MediaType: mediaType,
+		Data:      contents,
 	}
 
-	rreq := &ocirequest.Request{
-		Kind:   ocirequest.ReqManifestPut,
-		Repo:   repo,
-		Tag:    tag,
-		Digest: string(desc.Digest),
+	var tags []string
+	if params != nil {
+		tags = params.Tags
 	}
-	req, err := newRequest(ctx, rreq, bytes.NewReader(contents))
+
+	// If there are no tags, push once by digest.
+	// If there are tags, push once per tag (all referencing the same contents).
+	if len(tags) == 0 {
+		rreq := &ocirequest.Request{
+			Kind:   ocirequest.ReqManifestPut,
+			Repo:   repo,
+			Digest: string(desc.Digest),
+		}
+		_, err := c.putManifest(ctx, rreq, desc)
+		return desc, err
+	} else {
+		rreq := &ocirequest.Request{
+			Kind:   ocirequest.ReqManifestPut,
+			Repo:   repo,
+			Tags:   tags,
+			Digest: string(desc.Digest),
+		}
+		createdTags, err := c.putManifest(ctx, rreq, desc)
+		if err != nil || len(createdTags) != len(tags) {
+			// bulk send failed, fallback to sending one at a time
+			for _, tag := range tags {
+				rreq := &ocirequest.Request{
+					Kind:   ocirequest.ReqManifestPut,
+					Repo:   repo,
+					Tag:    tag,
+					Digest: string(desc.Digest),
+				}
+				_, err = c.putManifest(ctx, rreq, desc)
+				if err != nil {
+					return ociregistry.Descriptor{}, fmt.Errorf("creating tag %s failed: %w", tag, err)
+				}
+			}
+		}
+	}
+	return desc, nil
+}
+
+func (c *client) putManifest(ctx context.Context, rreq *ocirequest.Request, desc ociregistry.Descriptor) ([]string, error) {
+	req, err := newRequest(ctx, rreq, bytes.NewReader(desc.Data))
 	if err != nil {
-		return ociregistry.Descriptor{}, err
+		return nil, err
 	}
-	req.Header.Set("Content-Type", mediaType)
+	req.Header.Set("Content-Type", desc.MediaType)
 	req.ContentLength = desc.Size
 	resp, err := c.do(req, http.StatusCreated)
 	if err != nil {
-		return ociregistry.Descriptor{}, err
+		return nil, err
 	}
 	resp.Body.Close()
-	return desc, nil
+
+	var tags []string
+	if vs := resp.Header.Values("OCI-Tag"); len(vs) > 0 {
+		for _, v := range vs {
+			tags = append(tags, strings.Split(v, ",")...)
+		}
+	}
+	return tags, nil
 }
 
 func (c *client) MountBlob(ctx context.Context, fromRepo, toRepo string, dig ociregistry.Digest) (ociregistry.Descriptor, error) {

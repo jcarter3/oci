@@ -98,7 +98,13 @@ func pushScratchConfig(t *testing.T, client ociregistry.Interface, repo string) 
 func pushManifest(t *testing.T, client ociregistry.Interface, repo, tag string, content any, mediaType string) ociregistry.Descriptor {
 	data, err := json.Marshal(content)
 	require.NoError(t, err)
-	desc, err := client.PushManifest(context.Background(), repo, tag, data, mediaType)
+	var params *ociregistry.PushManifestParameters
+	if tag != "" {
+		params = &ociregistry.PushManifestParameters{
+			Tags: []string{tag},
+		}
+	}
+	desc, err := client.PushManifest(context.Background(), repo, data, mediaType, params)
 	require.NoError(t, err)
 	return desc
 }
