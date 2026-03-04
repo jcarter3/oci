@@ -74,6 +74,11 @@ type Request struct {
 	//	ReqManifestDelete
 	Tag string
 
+	// Tags hold a list of tags to push with a manifest digest. Valid
+	// for these manifest requests:
+	// ReqManifestPut
+	Tags []string
+
 	// FromRepo holds the repository name to mount from
 	// for ReqBlobMount.
 	FromRepo string
@@ -344,6 +349,7 @@ func Parse(method string, u *url.URL) (*Request, error) {
 			rreq.Kind = ReqManifestHead
 		case "PUT":
 			rreq.Kind = ReqManifestPut
+			rreq.Tags = urlq["tag"]
 		case "DELETE":
 			rreq.Kind = ReqManifestDelete
 		default:

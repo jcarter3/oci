@@ -120,9 +120,9 @@ func (r *subRegistry) MountBlob(ctx context.Context, fromRepo, toRepo string, di
 	return r.r.MountBlob(ctx, r.repo(fromRepo), r.repo(toRepo), digest)
 }
 
-func (r *subRegistry) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
+func (r *subRegistry) PushManifest(ctx context.Context, repo string, contents []byte, mediaType string, params *ociregistry.PushManifestParameters) (ociregistry.Descriptor, error) {
 	ctx = r.mapScopes(ctx)
-	return r.r.PushManifest(ctx, r.repo(repo), tag, contents, mediaType)
+	return r.r.PushManifest(ctx, r.repo(repo), contents, mediaType, params)
 }
 
 func (r *subRegistry) DeleteBlob(ctx context.Context, repo string, digest ociregistry.Digest) error {

@@ -269,7 +269,13 @@ func TestPushManifest(t *testing.T) {
 				"test": test.preload,
 			})["test"]
 			data := test.manifestData(content)
-			_, err := r.R.PushManifest(ctx, "test", test.tag, data, test.mediaType)
+			var params *ociregistry.PushManifestParameters
+			if test.tag != "" {
+				params = &ociregistry.PushManifestParameters{
+					Tags: []string{test.tag},
+				}
+			}
+			_, err := r.R.PushManifest(ctx, "test", data, test.mediaType, params)
 			if test.wantError != "" {
 				require.Error(t, err)
 				require.Regexp(t, test.wantError, err.Error())

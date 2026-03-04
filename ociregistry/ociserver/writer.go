@@ -175,19 +175,20 @@ func (r *registry) handleManifestPut(ctx context.Context, resp http.ResponseWrit
 		return fmt.Errorf("cannot read content: %v", err)
 	}
 	dig := digest.FromBytes(data)
-	var tag string
+	params := &ociregistry.PushManifestParameters{}
 	if rreq.Tag != "" {
-		tag = rreq.Tag
+		params.Tags = []string{rreq.Tag}
 	} else {
 		if ociregistry.Digest(rreq.Digest) != dig {
 			return ociregistry.ErrDigestInvalid
 		}
+		params.Tags = rreq.Tags
 	}
 	subjectDesc, err := subjectFromManifest(req.Header.Get("Content-Type"), data)
 	if err != nil {
 		return fmt.Errorf("invalid manifest JSON: %v", err)
 	}
-	desc, err := r.backend.PushManifest(ctx, rreq.Repo, tag, data, mediaType)
+	desc, err := r.backend.PushManifest(ctx, rreq.Repo, data, mediaType, params)
 	if err != nil {
 		return err
 	}

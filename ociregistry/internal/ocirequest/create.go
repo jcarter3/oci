@@ -71,7 +71,15 @@ func (req *Request) construct() (method string, urlStr string) {
 	case ReqManifestHead:
 		return "HEAD", "/v2/" + req.Repo + "/manifests/" + req.tagOrDigest()
 	case ReqManifestPut:
-		return "PUT", "/v2/" + req.Repo + "/manifests/" + req.tagOrDigest()
+		u := "/v2/" + req.Repo + "/manifests/" + req.tagOrDigest()
+		if len(req.Tags) > 0 {
+			params := url.Values{}
+			for _, tag := range req.Tags {
+				params.Add("tag", tag)
+			}
+			u += "?" + params.Encode()
+		}
+		return "PUT", u
 	case ReqManifestDelete:
 		return "DELETE", "/v2/" + req.Repo + "/manifests/" + req.tagOrDigest()
 	case ReqTagsList:

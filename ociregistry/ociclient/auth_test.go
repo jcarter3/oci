@@ -76,7 +76,9 @@ func TestAuthScopes(t *testing.T) {
 		r.MountBlob(ctx, "x/y", "z/w", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 	})
 	assertScope("repository:foo/bar:push", func(ctx context.Context, r ociregistry.Interface) {
-		r.PushManifest(ctx, "foo/bar", "sometag", []byte("something"), "application/json")
+		r.PushManifest(ctx, "foo/bar", []byte("something"), "application/json", &ociregistry.PushManifestParameters{
+			Tags: []string{"sometag"},
+		})
 	})
 	assertScope("repository:foo/bar:push", func(ctx context.Context, r ociregistry.Interface) {
 		r.DeleteBlob(ctx, "foo/bar", "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")

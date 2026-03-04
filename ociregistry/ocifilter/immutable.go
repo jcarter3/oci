@@ -35,33 +35,46 @@ type immutable struct {
 	ociregistry.Interface
 }
 
-func (r immutable) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
-	if tag == "" {
-		return r.Interface.PushManifest(ctx, repo, tag, contents, mediaType)
+func (r immutable) PushManifest(ctx context.Context, repo string, contents []byte, mediaType string, params *ociregistry.PushManifestParameters) (ociregistry.Descriptor, error) {
+	var tags []string
+	if params != nil {
+		tags = params.Tags
 	}
-	dig := digest.FromBytes(contents)
+	if len(tags) == 0 {
+		return r.Interface.PushManifest(ctx, repo, contents, mediaType, params)
+	}
+	var dig ociregistry.Digest
+	if params != nil && params.Digest != "" {
+		dig = params.Digest
+	} else {
+		dig = digest.FromBytes(contents)
+	}
 
-	if desc, err := r.ResolveTag(ctx, repo, tag); err == nil {
-		if desc.Digest == dig {
-			// We're trying to push exactly the same content. That's OK.
-			return desc, nil
+	for _, tag := range tags {
+		if desc, err := r.ResolveTag(ctx, repo, tag); err == nil {
+			if desc.Digest == dig {
+				// We're trying to push exactly the same content. That's OK.
+				continue
+			}
+			return ociregistry.Descriptor{}, fmt.Errorf("this store is immutable: %w", ociregistry.ErrDenied)
 		}
-		return ociregistry.Descriptor{}, fmt.Errorf("this store is immutable: %w", ociregistry.ErrDenied)
 	}
-	desc, err := r.Interface.PushManifest(ctx, repo, tag, contents, mediaType)
+	desc, err := r.Interface.PushManifest(ctx, repo, contents, mediaType, params)
 	if err != nil {
 		return ociregistry.Descriptor{}, err
 	}
-	// We've pushed the tag but someone else might also have pushed it at the same time.
+	// We've pushed the tags but someone else might also have pushed them at the same time.
 	// UNFORTUNATELY if there was a race, then there's a small window in time where
 	// some client might have seen the tag change underfoot.
-	desc, err = r.ResolveTag(ctx, repo, tag)
-	if err != nil {
-		return ociregistry.Descriptor{}, fmt.Errorf("cannot resolve tag that's just been pushed: %v", err)
-	}
-	if desc.Digest != dig {
-		// We lost the race.
-		return ociregistry.Descriptor{}, fmt.Errorf("this store is immutable: %w", ociregistry.ErrDenied)
+	for _, tag := range tags {
+		tagDesc, err := r.ResolveTag(ctx, repo, tag)
+		if err != nil {
+			return ociregistry.Descriptor{}, fmt.Errorf("cannot resolve tag %q that's just been pushed: %v", tag, err)
+		}
+		if tagDesc.Digest != dig {
+			// We lost the race.
+			return ociregistry.Descriptor{}, fmt.Errorf("this store is immutable: %w", ociregistry.ErrDenied)
+		}
 	}
 	return desc, nil
 }

@@ -145,6 +145,12 @@ type Reader interface {
 	ResolveTag(ctx context.Context, repo string, tagName string) (Descriptor, error)
 }
 
+// PushManifestParameters holds optional parameters for the [Writer.PushManifest] method.
+type PushManifestParameters struct {
+	Digest Digest
+	Tags   []string
+}
+
 // Writer defines registry actions that write to blobs, manifests and tags.
 type Writer interface {
 	// PushBlob pushes a blob described by desc to the given repository, reading content from r.
@@ -196,10 +202,9 @@ type Writer interface {
 	MountBlob(ctx context.Context, fromRepo, toRepo string, digest Digest) (Descriptor, error)
 
 	// PushManifest pushes a manifest with the given media type and contents.
-	// If tag is non-empty, the tag with that name will be pointed at the manifest.
 	//
 	// It returns a descriptor suitable for accessing the manfiest.
-	PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (Descriptor, error)
+	PushManifest(ctx context.Context, repo string, contents []byte, mediaType string, params *PushManifestParameters) (Descriptor, error)
 }
 
 // Deleter defines registry actions that delete objects from the registry.

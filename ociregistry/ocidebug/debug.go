@@ -138,9 +138,9 @@ func (r *logger) PushBlobChunkedResume(ctx context.Context, repoName, id string,
 	}, err
 }
 
-func (r *logger) PushManifest(ctx context.Context, repoName string, tag string, data []byte, mediaType string) (ociregistry.Descriptor, error) {
-	r.logf("PushManifest %s tag=%q mediaType=%q data=%q {", repoName, tag, mediaType, data)
-	desc, err := r.r.PushManifest(ctx, repoName, tag, data, mediaType)
+func (r *logger) PushManifest(ctx context.Context, repoName string, data []byte, mediaType string, params *ociregistry.PushManifestParameters) (ociregistry.Descriptor, error) {
+	r.logf("PushManifest %s params=%+v mediaType=%q data=%q {", repoName, params, mediaType, data)
+	desc, err := r.r.PushManifest(ctx, repoName, data, mediaType, params)
 	if err != nil {
 		r.logf("} -> %v", err)
 	} else {

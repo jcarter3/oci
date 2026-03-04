@@ -48,9 +48,9 @@ func (u unifier) PushBlob(ctx context.Context, repo string, desc ociregistry.Des
 	return ociregistry.Descriptor{}, fmt.Errorf("one push succeeded where the other failed (TODO better error)")
 }
 
-func (u unifier) PushManifest(ctx context.Context, repo string, tag string, contents []byte, mediaType string) (ociregistry.Descriptor, error) {
+func (u unifier) PushManifest(ctx context.Context, repo string, contents []byte, mediaType string, params *ociregistry.PushManifestParameters) (ociregistry.Descriptor, error) {
 	r0, r1 := both(u, func(r ociregistry.Interface, _ int) t2[ociregistry.Descriptor] {
-		return mk2(r.PushManifest(ctx, repo, tag, contents, mediaType))
+		return mk2(r.PushManifest(ctx, repo, contents, mediaType, params))
 	})
 	if (r0.err == nil) == (r1.err == nil) {
 		return r0.get()
