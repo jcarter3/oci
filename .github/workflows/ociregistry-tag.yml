@@ -1,12 +1,12 @@
-name: "ociregistry: tag"
+name: "oci: tag"
 
 on:
   push:
     branches:
       - main
     paths:
-      - "ociregistry/**"
-      - ".github/workflows/ociregistry-tag.yml"
+      - "./**"
+      - ".github/workflows/oci-tag.yml"
 
 permissions:
   contents: write
@@ -25,8 +25,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
-          INITIAL_VERSION: 0.0.0
-          TAG_PREFIX: ociregistry/v
+          INITIAL_VERSION: 0.0.1
+          TAG_PREFIX: v
           MAJOR_STRING_TOKEN: (MAJOR)
           MINOR_STRING_TOKEN: (MINOR)
           BRANCH_HISTORY: compare

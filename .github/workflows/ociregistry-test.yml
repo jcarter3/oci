@@ -1,10 +1,10 @@
-name: "ociregistry: test"
+name: "oci: test"
 
 on:
   pull_request:
     paths:
-      - "ociregistry/**"
-      - ".github/workflows/ociregistry-test.yml"
+      - "./**"
+      - ".github/workflows/oci-test.yml"
 
 permissions:
   contents: read
@@ -15,14 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ociregistry
+        working-directory: oci
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: ociregistry/go.mod
-          cache-dependency-path: ociregistry/go.sum
+          go-version-file: oci/go.mod
+          cache-dependency-path: oci/go.sum
 
       - name: Run tests
         run: go test -race -count=1 ./...

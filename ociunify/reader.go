@@ -1,0 +1,124 @@
+// Copyright 2023 CUE Labs AG
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package ociunify
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jcarter3/oci"
+)
+
+// Reader methods.
+
+func (u unifier) GetBlob(ctx context.Context, repo string, digest oci.Digest) (oci.BlobReader, error) {
+	return runReadBlobReader(ctx, u, func(ctx context.Context, r oci.Interface, i int) t2[oci.BlobReader] {
+		return mk2(r.GetBlob(ctx, repo, digest))
+	})
+}
+
+func (u unifier) GetBlobRange(ctx context.Context, repo string, digest oci.Digest, o0, o1 int64) (oci.BlobReader, error) {
+	return runReadBlobReader(ctx, u,
+		func(ctx context.Context, r oci.Interface, i int) t2[oci.BlobReader] {
+			return mk2(r.GetBlobRange(ctx, repo, digest, o0, o1))
+		},
+	)
+}
+
+func (u unifier) GetManifest(ctx context.Context, repo string, digest oci.Digest) (oci.BlobReader, error) {
+	return runReadBlobReader(ctx, u,
+		func(ctx context.Context, r oci.Interface, i int) t2[oci.BlobReader] {
+			return mk2(r.GetManifest(ctx, repo, digest))
+		},
+	)
+}
+
+type blobReader struct {
+	oci.BlobReader
+	cancel func()
+}
+
+func (r blobReader) Close() error {
+	defer r.cancel()
+	return r.BlobReader.Close()
+}
+
+func (u unifier) GetTag(ctx context.Context, repo string, tagName string) (oci.BlobReader, error) {
+	r0, r1 := both(u, func(r oci.Interface, _ int) t2[oci.BlobReader] {
+		return mk2(r.GetTag(ctx, repo, tagName))
+	})
+	switch {
+	case r0.err == nil && r1.err == nil:
+		if r0.x.Descriptor().Digest == r1.x.Descriptor().Digest {
+			r1.x.Close()
+			return r0.get()
+		}
+		r0.close()
+		r1.close()
+		return nil, fmt.Errorf("conflicting results for tag")
+	case r0.err != nil && r1.err != nil:
+		return r0.get()
+	case r0.err == nil:
+		return r0.get()
+	case r1.err == nil:
+		return r1.get()
+	}
+	panic("unreachable")
+}
+
+func (u unifier) ResolveBlob(ctx context.Context, repo string, digest oci.Digest) (oci.Descriptor, error) {
+	return runRead(ctx, u, func(ctx context.Context, r oci.Interface, _ int) t2[oci.Descriptor] {
+		return mk2(r.ResolveBlob(ctx, repo, digest))
+	}).get()
+}
+
+func (u unifier) ResolveManifest(ctx context.Context, repo string, digest oci.Digest) (oci.Descriptor, error) {
+	return runRead(ctx, u, func(ctx context.Context, r oci.Interface, _ int) t2[oci.Descriptor] {
+		return mk2(r.ResolveManifest(ctx, repo, digest))
+	}).get()
+}
+
+func (u unifier) ResolveTag(ctx context.Context, repo string, tagName string) (oci.Descriptor, error) {
+	r0, r1 := both(u, func(r oci.Interface, _ int) t2[oci.Descriptor] {
+		return mk2(r.ResolveTag(ctx, repo, tagName))
+	})
+	switch {
+	case r0.err == nil && r1.err == nil:
+		if r0.x.Digest == r1.x.Digest {
+			return r0.get()
+		}
+		return oci.Descriptor{}, fmt.Errorf("conflicting results for tag")
+	case r0.err != nil && r1.err != nil:
+		return r0.get()
+	case r0.err == nil:
+		return r0.get()
+	case r1.err == nil:
+		return r1.get()
+	}
+	panic("unreachable")
+}
+
+func runReadBlobReader(ctx context.Context, u unifier, f func(ctx context.Context, r oci.Interface, i int) t2[oci.BlobReader]) (oci.BlobReader, error) {
+	rv, cancel := runReadWithCancel(ctx, u, f)
+	r, err := rv.get()
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	return blobReader{
+		BlobReader: r,
+		cancel:     cancel,
+	}, nil
+}

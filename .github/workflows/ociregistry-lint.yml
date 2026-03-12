@@ -1,10 +1,10 @@
-name: "ociregistry: lint"
+name: "oci: lint"
 
 on:
   pull_request:
     paths:
-      - "ociregistry/**"
-      - ".github/workflows/ociregistry-lint.yml"
+      - "./**"
+      - ".github/workflows/oci-lint.yml"
 
 permissions:
   contents: read
@@ -15,17 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ociregistry
+        working-directory: oci
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: ociregistry/go.mod
-          cache-dependency-path: ociregistry/go.sum
+          go-version-file: oci/go.mod
+          cache-dependency-path: oci/go.sum
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.10.1
-          working-directory: ociregistry
+          working-directory: oci
