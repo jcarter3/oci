@@ -14,8 +14,6 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     defaults:
-      run:
-        working-directory: oci
     steps:
       - uses: actions/checkout@v4
 
@@ -28,4 +26,3 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.10.1
-          working-directory: oci

@@ -13,9 +13,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: oci
     steps:
       - uses: actions/checkout@v4
 
