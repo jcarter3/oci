@@ -20,3 +20,40 @@ Although the API is fairly stable, it's still in v0 currently, so incompatible c
 The code was originally derived from [cue-labs/oci](https://github.com/cue-labs/oci) which was originally derived from
 the [go-containerregistry](https://pkg.go.dev/github.com/google/go-containerregistry/pkg/registry) package, but has 
 considerably diverged since then.
+
+# Usage
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jcarter3/oci/ociauth"
+	"github.com/jcarter3/oci/ociclient"
+)
+
+func main() {
+	cf, err := ociauth.Load(nil)
+	if err != nil {
+		panic(err)
+	}
+
+	ocl, err := ociclient.New("index.docker.io", &ociclient.Options{
+		Transport: ociauth.NewStdTransport(ociauth.StdTransportParams{
+			Config: cf,
+		}),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	tags := ocl.Tags(context.Background(), "library/alpine", nil)
+	for tag, err := range tags {
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s\n", tag)
+	}
+}
+```
