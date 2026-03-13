@@ -27,9 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jcarter3/oci/ociregistry"
-	"github.com/jcarter3/oci/ociregistry/ociclient"
-	"github.com/opencontainers/go-digest"
+	"github.com/jcarter3/oci/ociclient"
 	"github.com/rogpeppe/go-internal/testscript"
 	"github.com/rogpeppe/retry"
 )
@@ -80,7 +78,7 @@ func cmdPushBlob(ts *testscript.TestScript, neg bool, args []string) {
 		ts.Fatalf("blob digest mismatch")
 	}
 
-	_, err = r.PushBlob(context.Background(), repo, ociregistry.Descriptor{
+	_, err = r.PushBlob(context.Background(), repo, oci.Descriptor{
 		Size:   int64(len(data)),
 		Digest: digest.Digest(dg),
 	}, bytes.NewReader(data))
@@ -125,7 +123,7 @@ var waitStrategy = retry.Strategy{
 	MaxDuration: 500 * time.Millisecond,
 }
 
-func connect(ts *testscript.TestScript) (ociregistry.Interface, error) {
+func connect(ts *testscript.TestScript) (oci.Interface, error) {
 	addrFile := ts.Getenv("ADDR_FILE")
 	if addrFile == "" {
 		return nil, fmt.Errorf("$ADDR_FILE not set")

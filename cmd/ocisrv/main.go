@@ -26,7 +26,7 @@ import (
 	"github.com/cue-exp/cueconfig"
 	"github.com/go-json-experiment/json"
 	"github.com/go-json-experiment/json/jsontext"
-	"github.com/jcarter3/oci/ociregistry/ociserver"
+	"github.com/jcarter3/oci/ociserver"
 )
 
 var (
@@ -44,7 +44,7 @@ type config struct {
 
 func main() {
 	if err := main1(); err != nil {
-		fmt.Fprintf(os.Stderr, "ociregistry: %v\n", err)
+		fmt.Fprintf(os.Stderr, "oci: %v\n", err)
 		os.Exit(1)
 	}
 }

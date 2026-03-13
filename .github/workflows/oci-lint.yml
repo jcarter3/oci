@@ -1,0 +1,27 @@
+name: "oci: lint"
+
+on:
+  pull_request:
+    paths:
+      - "./**"
+      - ".github/workflows/oci-lint.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.10.1

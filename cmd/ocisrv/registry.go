@@ -20,12 +20,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jcarter3/oci/ociregistry"
-	"github.com/jcarter3/oci/ociregistry/ociclient"
-	"github.com/jcarter3/oci/ociregistry/ocidebug"
-	"github.com/jcarter3/oci/ociregistry/ocifilter"
-	"github.com/jcarter3/oci/ociregistry/ocimem"
-	"github.com/jcarter3/oci/ociregistry/ociunify"
+	"github.com/jcarter3/oci"
+	"github.com/jcarter3/oci/ociclient"
+	"github.com/jcarter3/oci/ocidebug"
+	"github.com/jcarter3/oci/ocifilter"
+	"github.com/jcarter3/oci/ocimem"
+	"github.com/jcarter3/oci/ociunify"
 )
 
 var kindToRegistryType = make(map[string]reflect.Type)
@@ -50,7 +50,7 @@ func init() {
 }
 
 type registry interface {
-	new() (ociregistry.Interface, error)
+	new() (oci.Interface, error)
 }
 
 type clientRegistry struct {
@@ -59,7 +59,7 @@ type clientRegistry struct {
 	DebugID  string `json:"debugID,omitempty"`
 }
 
-func (r clientRegistry) new() (ociregistry.Interface, error) {
+func (r clientRegistry) new() (oci.Interface, error) {
 	return ociclient.New(r.Host, &ociclient.Options{
 		DebugID:  r.DebugID,
 		Insecure: r.Insecure,
@@ -72,7 +72,7 @@ type selectRegistry struct {
 	Exclude  *regexp.Regexp `json:"exclude,omitempty"`
 }
 
-func (r selectRegistry) new() (ociregistry.Interface, error) {
+func (r selectRegistry) new() (oci.Interface, error) {
 	r1, err := r.Registry.new()
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ type readOnlyRegistry struct {
 	Registry registry `json:"registry"`
 }
 
-func (r readOnlyRegistry) new() (ociregistry.Interface, error) {
+func (r readOnlyRegistry) new() (oci.Interface, error) {
 	r1, err := r.Registry.new()
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ type immutableRegistry struct {
 	Registry registry `json:"registry"`
 }
 
-func (r immutableRegistry) new() (ociregistry.Interface, error) {
+func (r immutableRegistry) new() (oci.Interface, error) {
 	r1, err := r.Registry.new()
 	if err != nil {
 		return nil, err
@@ -117,11 +117,11 @@ type unifyRegistry struct {
 	// TODO options
 }
 
-func (r unifyRegistry) new() (ociregistry.Interface, error) {
+func (r unifyRegistry) new() (oci.Interface, error) {
 	if len(r.Registries) != 2 {
 		return nil, fmt.Errorf("can currently unify exactly two registries only")
 	}
-	r1 := make([]ociregistry.Interface, len(r.Registries))
+	r1 := make([]oci.Interface, len(r.Registries))
 	for i := range r.Registries {
 		ri, err := r.Registries[i].new()
 		if err != nil {
@@ -134,7 +134,7 @@ func (r unifyRegistry) new() (ociregistry.Interface, error) {
 
 type memRegistry struct{}
 
-func (r memRegistry) new() (ociregistry.Interface, error) {
+func (r memRegistry) new() (oci.Interface, error) {
 	return ocimem.New(), nil
 }
 
@@ -142,7 +142,7 @@ type debugRegistry struct {
 	Registry registry `json:"registry"`
 }
 
-func (r debugRegistry) new() (ociregistry.Interface, error) {
+func (r debugRegistry) new() (oci.Interface, error) {
 	r1, err := r.Registry.new()
 	if err != nil {
 		return nil, err
