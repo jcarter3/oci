@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/jcarter3/oci"
 	"github.com/opencontainers/go-digest"
-	"golang.org/x/sync/errgroup"
 )
 
 // Tuning constants for the adaptive parallel download pipeline.
@@ -147,16 +147,19 @@ func fetchRange(ctx context.Context, reg oci.Interface, repo string, dgst oci.Di
 	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries, lastErr)
 }
 
-// chunkResult holds the downloaded data for a single chunk together with
-// its ordinal index so the writer can emit bytes in sequence.
+// chunkResult holds the downloaded data for a single chunk.
 type chunkResult struct {
-	index int
-	data  []byte
-	err   error
+	data []byte
+	err  error
 }
 
 // runPipeline orchestrates the concurrent download and feeds the pipe writer
 // with bytes in the correct order. It always closes pw (with or without error).
+//
+// Memory is bounded: at most maxConcurrent chunks are ever in flight or
+// buffered at a time. A sliding window of fetcher goroutines advances as
+// the writer drains each chunk, so completed data is written to the pipe
+// (and freed) as soon as possible.
 func runPipeline(
 	ctx context.Context,
 	reg oci.Interface,
@@ -186,70 +189,90 @@ func runPipeline(
 
 	// Build the list of remaining byte-ranges to fetch.
 	type rangeSpec struct {
-		index int
 		start int64
 		end   int64
 	}
 
-	var remaining []rangeSpec
-	// The next byte to fetch starts right after the probe.
+	var chunks []rangeSpec
 	offset := probeLen
-	idx := 0
 	for offset < totalSize {
 		end := offset + chunkSize
 		if end > totalSize {
 			end = totalSize
 		}
-		remaining = append(remaining, rangeSpec{index: idx, start: offset, end: end})
+		chunks = append(chunks, rangeSpec{start: offset, end: end})
 		offset = end
-		idx++
 	}
-	numRemaining := len(remaining)
+	numChunks := len(chunks)
 
-	// Ordered result slots — one per remaining chunk.  A slot is written
-	// exactly once by its fetcher goroutine and read exactly once by the
-	// writer loop below.
-	results := make([]chan chunkResult, numRemaining)
-	for i := range results {
-		results[i] = make(chan chunkResult, 1)
+	// Sliding window: we keep exactly maxConcurrent result channels alive
+	// at any time. slots[i % maxConcurrent] holds the channel for chunk i.
+	// Each channel is created when its fetcher is launched and consumed
+	// (then nilled) when the writer drains it, so at most maxConcurrent
+	// chunks' worth of data is ever resident in memory.
+	window := min(maxConcurrent, numChunks)
+	slots := make([]chan chunkResult, maxConcurrent)
+
+	var wg sync.WaitGroup
+
+	// launchFetcher starts a goroutine that downloads chunk i and deposits
+	// the result into its slot.
+	launchFetcher := func(i int) {
+		ch := make(chan chunkResult, 1)
+		slots[i%maxConcurrent] = ch
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			data, err := fetchRange(ctx, reg, repo, dgst, chunks[i].start, chunks[i].end)
+			ch <- chunkResult{data: data, err: err}
+		}()
 	}
 
-	// Fan-out: launch fetchers.  Each fetcher acquires a semaphore slot,
-	// downloads its range, and deposits the result in the correct
-	// ordered channel.
-	var wg errgroup.Group
-	wg.SetLimit(maxConcurrent)
-	for _, rs := range remaining {
-		wg.Go(func() error {
-			data, err := fetchRange(ctx, reg, repo, dgst, rs.start, rs.end)
-			results[rs.index] <- chunkResult{index: rs.index, data: data, err: err}
-			return nil
-		})
+	// Seed the window: launch the first batch of fetchers.
+	for i := range window {
+		launchFetcher(i)
 	}
 
-	// Drain results in order and write to the pipe.
-	for i := 0; i < numRemaining; i++ {
+	// nextLaunch tracks the index of the next chunk to launch.
+	nextLaunch := window
+
+	// Drain chunks in order. As each chunk is consumed, launch the next
+	// one (if any) so the window slides forward.
+	for i := range numChunks {
+		ch := slots[i%maxConcurrent]
+		var cr chunkResult
 		select {
 		case <-ctx.Done():
 			pw.CloseWithError(ctx.Err())
-			// Let outstanding goroutines finish so they don't leak.
 			wg.Wait()
 			return
-		case cr := <-results[i]:
-			if cr.err != nil {
-				pw.CloseWithError(fmt.Errorf("chunk %d (offset %d): %w", i, remaining[i].start, cr.err))
-				wg.Wait()
-				return
-			}
-			if _, err := pw.Write(cr.data); err != nil {
-				pw.CloseWithError(err)
-				wg.Wait()
-				return
-			}
+		case cr = <-ch:
+		}
+
+		// Free the slot immediately so the GC can reclaim the channel.
+		slots[i%maxConcurrent] = nil
+
+		if cr.err != nil {
+			pw.CloseWithError(fmt.Errorf("chunk %d (offset %d): %w", i, chunks[i].start, cr.err))
+			wg.Wait()
+			return
+		}
+
+		// Write the data into the pipe, then let it be GC'd.
+		if _, err := pw.Write(cr.data); err != nil {
+			pw.CloseWithError(err)
+			wg.Wait()
+			return
+		}
+		cr.data = nil
+
+		// Advance the window: launch the next fetcher if there is one.
+		if nextLaunch < numChunks {
+			launchFetcher(nextLaunch)
+			nextLaunch++
 		}
 	}
 
-	// All goroutines should already be done, but be safe.
 	wg.Wait()
 }
 
