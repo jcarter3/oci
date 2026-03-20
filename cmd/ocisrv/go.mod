@@ -11,7 +11,7 @@ require (
 	github.com/rogpeppe/retry v0.1.0
 )
 
-replace github.com/jcarter3/oci => ../../oci
+replace github.com/jcarter3/oci => ../../../oci
 
 require (
 	cuelang.org/go v0.6.0-alpha.2.0.20230628162133-7be6224cbc4f // indirect
