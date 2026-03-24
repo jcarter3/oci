@@ -520,3 +520,16 @@ type emptyConfig struct{}
 func (emptyConfig) EntryForRegistry(host string) (ConfigEntry, error) {
 	return ConfigEntry{}, nil
 }
+
+type staticConfig struct {
+	entry ConfigEntry
+}
+
+// NewStatic returns a ConfigFile implementation that always returns the same credentials for any host
+func NewStatic(username, password string) Config {
+	return staticConfig{entry: ConfigEntry{Username: username, Password: password}}
+}
+
+func (c staticConfig) EntryForRegistry(_ string) (ConfigEntry, error) {
+	return c.entry, nil
+}
