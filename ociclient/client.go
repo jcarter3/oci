@@ -58,6 +58,9 @@ type Options struct {
 	// Insecure specifies whether an http scheme will be used to
 	// address the host instead of https.
 	Insecure bool
+
+	// Specifies a user agent string to use when making requests. Defaults to "jcarter3/oci"
+	UserAgent string
 }
 
 // See https://github.com/google/go-containerregistry/issues/1091
@@ -82,6 +85,9 @@ func New(host string, opts0 *Options) (oci.Interface, error) {
 	if opts.Transport == nil {
 		opts.Transport = http.DefaultTransport
 	}
+	if opts.UserAgent == "" {
+		opts.UserAgent = "jcarter3/oci"
+	}
 	// Check that it's a valid host by forming a URL from it and checking that it matches.
 	u, err := url.Parse("https://" + host + "/path")
 	if err != nil {
@@ -99,7 +105,8 @@ func New(host string, opts0 *Options) (oci.Interface, error) {
 		httpClient: &http.Client{
 			Transport: opts.Transport,
 		},
-		debugID: opts.DebugID,
+		userAgent: opts.UserAgent,
+		debugID:   opts.DebugID,
 	}, nil
 }
 
@@ -108,6 +115,7 @@ type client struct {
 	httpScheme   string
 	httpHost     string
 	httpClient   *http.Client
+	userAgent    string
 	debugID      string
 	listPageSize int
 }
@@ -272,6 +280,8 @@ func (c *client) do(req *http.Request, okStatuses ...int) (*http.Response, error
 	if req.URL.Host == "" {
 		req.URL.Host = c.httpHost
 	}
+	req.Header.Set("User-Agent", c.userAgent)
+
 	if req.Body != nil {
 		// Ensure that the body isn't consumed until the
 		// server has responded that it will receive it.
