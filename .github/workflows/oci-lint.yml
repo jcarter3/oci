@@ -3,8 +3,7 @@ name: "oci: lint"
 on:
   pull_request:
     paths:
-      - "./**"
-      - ".github/workflows/oci-lint.yml"
+      - "**"
 
 permissions:
   contents: read
