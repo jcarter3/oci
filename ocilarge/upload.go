@@ -9,6 +9,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// UploadLargeBlob uploads a large blob in chunks with retries so that uploads can be resumed in case of network error
 func UploadLargeBlob(ctx context.Context, reg oci.Interface, repo string, f io.ReadCloser, chunkSize int) (oci.Descriptor, error) {
 	defer f.Close()
 	if chunkSize <= 0 {
@@ -18,7 +19,7 @@ func UploadLargeBlob(ctx context.Context, reg oci.Interface, repo string, f io.R
 	if err != nil {
 		return oci.Descriptor{}, fmt.Errorf("starting chunked upload: %w", err)
 	}
-	defer bw.Cancel() // no-op after a successful Commit
+	defer func() { _ = bw.Cancel() }() // no-op after a successful Commit
 
 	buf := make([]byte, chunkSize)
 	dgstr := digest.Canonical.Digester()
@@ -28,7 +29,7 @@ func UploadLargeBlob(ctx context.Context, reg oci.Interface, repo string, f io.R
 			dgstr.Hash().Write(buf[:n])
 
 			var writeErr error
-			for i := 0; i < 3; i++ { // try writing each chunk three times
+			for range 3 { // try writing each chunk three times
 				_, writeErr = bw.Write(buf[:n])
 				if writeErr == nil {
 					break

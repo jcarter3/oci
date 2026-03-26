@@ -5,8 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "./**"
-      - ".github/workflows/oci-tag.yml"
+      - "**"
 
 permissions:
   contents: write
